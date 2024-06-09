@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Grid TestApp</string>
+    <string name="error">Ошибка</string>
+</resources>
