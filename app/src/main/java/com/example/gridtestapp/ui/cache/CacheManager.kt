@@ -7,13 +7,14 @@ import android.net.Uri
 import android.webkit.URLUtil
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import com.example.gridtestapp.MainActivity
-import com.example.gridtestapp.ui.CELL_COUNT_PORTRAIT
+import com.example.gridtestapp.logic.viewmodels.ImageWidth
 import com.example.gridtestapp.ui.exceptions.ImageLoadException
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 import java.io.File
 import java.io.FileOutputStream
 import kotlin.coroutines.resume
@@ -28,7 +29,7 @@ import kotlin.coroutines.resumeWithException
 *
  */
 
-object CacheManager {
+object CacheManager: KoinComponent {
 
     private const val originalDirectory: String = "original_image_cache"
     private const val previewDirectory: String = "preview_image_cache"
@@ -90,10 +91,14 @@ object CacheManager {
     private fun savePreviewImage(url: String, bitmap: Bitmap) {
         val file = File(urlToPreviewPath(url))
         val out = FileOutputStream(file)
+
+        val width = get<ImageWidth>().value
+        val height = bitmap.height * width / bitmap.width
+
         val previewBitmap = Bitmap.createScaledBitmap(
             bitmap,
-            MainActivity.minSide / CELL_COUNT_PORTRAIT,
-            MainActivity.minSide / CELL_COUNT_PORTRAIT,
+            width,
+            height,
             false)
         previewBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         out.close()

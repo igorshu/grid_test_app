@@ -76,6 +76,8 @@ dependencies {
 
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.28.0")
     implementation("net.engawapg.lib:zoomable:1.6.1")
+    implementation("androidx.compose.foundation:foundation:1.6.7")
+
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

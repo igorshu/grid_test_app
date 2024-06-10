@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.gridtestapp.logic.events.LoadImageEvent
 import com.example.gridtestapp.logic.events.MainEvent
 import com.example.gridtestapp.logic.events.ReloadImageEvent
+import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
 import com.example.gridtestapp.logic.states.MainScreenState
 import com.example.gridtestapp.ui.cache.CacheManager
 import com.example.gridtestapp.ui.exceptions.ImageLoadException
@@ -20,6 +21,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 import org.koin.dsl.module
 
 /*
@@ -27,7 +30,8 @@ import org.koin.dsl.module
 *   Вью модель для главоного экрана с превьюшками
 *
 */
-class MainViewModel(private val application: Application): AndroidViewModel(application) {
+class MainViewModel(private val application: Application): AndroidViewModel(application),
+    KoinComponent {
 
     private val handler = CoroutineExceptionHandler { _, exception -> showError(exception)}
     private val imageExceptionHandler = CoroutineExceptionHandler { _, exception -> loadImageError(exception)}
@@ -109,12 +113,18 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
         when (event) {
             is LoadImageEvent -> loadImage(event.url, false)
             is ReloadImageEvent -> loadImage(event.url, true)
+            is UpdateImageWidthEvent -> changeWidth(event.width)
         }
+    }
+
+    private fun changeWidth(width: Int) {
+        get<ImageWidth>().value = width
     }
 
     companion object {
         val module = module {
             single { MainViewModel(get()) }
+            single { ImageWidth(1) }
         }
     }
 }

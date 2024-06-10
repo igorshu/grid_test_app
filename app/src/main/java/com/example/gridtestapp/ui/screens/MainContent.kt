@@ -1,6 +1,5 @@
 package com.example.gridtestapp.ui.screens
 
-import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,9 +7,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -21,14 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import com.example.gridtestapp.logic.events.LoadImageEvent
 import com.example.gridtestapp.logic.events.OnMainEvent
 import com.example.gridtestapp.logic.events.ReloadImageEvent
+import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
 import com.example.gridtestapp.logic.states.MainScreenState
-import com.example.gridtestapp.ui.CELL_COUNT_LANDSCAPE
-import com.example.gridtestapp.ui.CELL_COUNT_PORTRAIT
 import com.example.gridtestapp.ui.cache.CacheManager.previewImageBitmap
 import com.example.gridtestapp.ui.navigation.Routes
 import com.google.accompanist.systemuicontroller.SystemUiController
@@ -68,12 +66,9 @@ fun MainContent(mainState: StateFlow<MainScreenState>, onEvent: OnMainEvent) {
 
 @Composable
 fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url: String) -> Unit) {
-    val orientation = LocalConfiguration.current.orientation
-    val cellCount = if (orientation == Configuration.ORIENTATION_LANDSCAPE) CELL_COUNT_LANDSCAPE else CELL_COUNT_PORTRAIT
-
-    LazyVerticalGrid(
+    LazyVerticalStaggeredGrid(
         modifier = Modifier.fillMaxSize(),
-        columns = GridCells.Fixed(cellCount),
+        columns = StaggeredGridCells.Adaptive(100.dp),
     ) {
         itemsIndexed(state.urls) {index, url ->
             if (state.loadedUrls.contains(url)) {
@@ -86,19 +81,20 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .aspectRatio(1.0f)
                             .clickable(onClick = {
                                 toImageScreen(url)
-                            })
+                            }).onGloballyPositioned { coordinates ->
+                                onEvent(UpdateImageWidthEvent(coordinates.size.width))
+                            }
                     )
                 } else {
-                    ImageLoader()
+                    ImageLoader(onEvent)
                     LaunchedEffect(url) {
                         onEvent(ReloadImageEvent(url))
                     }
                 }
             } else {
-                ImageLoader()
+                ImageLoader(onEvent)
                 LaunchedEffect(url) {
                     onEvent(LoadImageEvent(url))
                 }
@@ -108,9 +104,13 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
 }
 
 @Composable
-private fun ImageLoader() {
+private fun ImageLoader(onEvent: OnMainEvent) {
     Box(
-        modifier = Modifier.aspectRatio(1.0f),
+        modifier = Modifier
+            .aspectRatio(1.0f)
+            .onGloballyPositioned { coordinates ->
+                onEvent(UpdateImageWidthEvent(coordinates.size.width))
+            },
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
