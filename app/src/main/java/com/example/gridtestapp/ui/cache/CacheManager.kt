@@ -31,24 +31,30 @@ import kotlin.coroutines.resumeWithException
 
 object CacheManager: KoinComponent {
 
-    private const val originalDirectory: String = "original_image_cache"
-    private const val previewDirectory: String = "preview_image_cache"
+    private const val ORIGINAL_DIRECTORY: String = "original_image_cache"
+    private const val PREVIEW_DIRECTORY: String = "preview_image_cache"
 
-    lateinit var cacheDir: String
+    private lateinit var originalDir: String // Директория для хранения оригинальных картинок
+    private lateinit var previewDir: String // Директория для хранения превью
+
+    private lateinit var cacheDir: String
 
     fun init(context: Context) {
         cacheDir = context.cacheDir.path
 
-        File(originalDir()).mkdir()
-        File(previewDir()).mkdir()
+        originalDir = "$cacheDir/$ORIGINAL_DIRECTORY"
+        previewDir = "$cacheDir/$PREVIEW_DIRECTORY"
+
+        File(originalDir).mkdir()
+        File(previewDir).mkdir()
     }
 
-    // Загружаем картинку из интернета и сохраняем в двух экземлярах
+    // Загружаем картинку из интернета и сохраняем в двух экземплярах
 
     suspend fun loadImage(url: String): Boolean {
         return suspendCancellableCoroutine { cont ->
             if (!URLUtil.isValidUrl(url)) {
-                cont.resumeWithException(ImageLoadException(url))
+                cont.resumeWithException(ImageLoadException(url, "Не валидный урл"))
                 return@suspendCancellableCoroutine
             }
 
@@ -58,7 +64,7 @@ object CacheManager: KoinComponent {
 
             val response: Response = OkHttpClient().newCall(request).execute()
             if (!response.isSuccessful) {
-                cont.resumeWithException(ImageLoadException(url))
+                cont.resumeWithException(ImageLoadException(url, "code=${response.code} and message=${response.message}"))
                 return@suspendCancellableCoroutine
             }
 
@@ -138,17 +144,9 @@ object CacheManager: KoinComponent {
         return "${uri.host}_${uri.pathSegments.joinToString("_")}" + if (uri.query != null) "_${uri.query!!.replace(":", "_")}" else ""
     }
 
-    // Директория для хранения оригинальных картинок
+    private fun urlToOriginalPath(url: String): String = originalDir + "/" + urlToFilename(url)
 
-    private fun originalDir(): String = "$cacheDir/$originalDirectory"
-
-    // Директория для хранения превью
-
-    private fun previewDir(): String = "$cacheDir/$previewDirectory"
-
-    private fun urlToOriginalPath(url: String): String = originalDir() + "/" + urlToFilename(url)
-
-    private fun urlToPreviewPath(url: String): String = previewDir() + "/" + urlToFilename(url)
+    private fun urlToPreviewPath(url: String): String = previewDir + "/" + urlToFilename(url)
 
     // Удаляем превью и оригинал с диска
 

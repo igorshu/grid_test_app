@@ -1,8 +1,9 @@
 package com.example.gridtestapp.logic.states
 
-import android.graphics.Bitmap
+import androidx.compose.ui.graphics.ImageBitmap
 
 data class MainScreenState(
-    var urls: List<String>,
-    val loadedUrls: HashSet<String>,
+    val urlStates: Map<String, LoadState>,
+    val previewBitmaps: Map<String, ImageBitmap>,
+    val widthConsumed: Boolean,
 )

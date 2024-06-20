@@ -1,0 +1,16 @@
+package com.example.gridtestapp.ui.other
+
+import android.util.Log
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
+import com.example.gridtestapp.logic.events.OnMainEvent
+import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
+import com.example.gridtestapp.logic.states.MainScreenState
+
+fun Modifier.onWidthChanged(state: MainScreenState, onEvent: OnMainEvent): Modifier =
+    this.onGloballyPositioned { coordinates ->
+        if (!state.widthConsumed) {
+//            Log.d("onEvent", "UpdateImageWidthEvent")
+            onEvent(UpdateImageWidthEvent(coordinates.size.width))
+        }
+    }
