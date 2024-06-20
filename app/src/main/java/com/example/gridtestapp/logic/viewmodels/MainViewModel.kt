@@ -79,9 +79,8 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
 
 
     init {
-        CacheManager.init(application)
-
         viewModelScope.launch(handler + Dispatchers.IO) {
+            CacheManager.init(application)
             loadLinks()
         }
     }
