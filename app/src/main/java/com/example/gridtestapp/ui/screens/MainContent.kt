@@ -96,6 +96,7 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
                           }
                         }
                     } else {
+                        Box(modifier = Modifier.aspectRatio(1.0f)) {}
                         LaunchedEffect(url) {
                             onEvent(LoadImageEvent(url))
                         }
