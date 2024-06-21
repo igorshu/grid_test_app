@@ -43,7 +43,7 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
 
     private val handler = CoroutineExceptionHandler { _, exception -> showError(exception)}
     private val imageExceptionHandler = CoroutineExceptionHandler { _, exception -> loadImageError(exception)}
-    private val imageDispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
+    private val imageCacheDispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
 
     private val preload = 0.5f
 
@@ -108,11 +108,7 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
         }
     }
 
-    private suspend fun loadImage(url: String, removeBefore: Boolean) {
-        if (removeBefore) {
-            CacheManager.removeBothImages(url)
-        }
-
+    private suspend fun loadImage(url: String) {
         if (CacheManager.isNotCached(url)) {
             _state.update {
                 it.copy(urlStates = it.urlStates.toMutableMap().apply { put(url, LoadState.LOADING) })
@@ -152,10 +148,12 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
 
     private fun tryLoadImage(index: Int?) {
         if (index != null) {
-            viewModelScope.launch(imageExceptionHandler + imageDispatcher) {
+            viewModelScope.launch(imageExceptionHandler + imageCacheDispatcher) {
                 val url = state.value.urls[index]
-                if (state.value.urlStates[url] == LoadState.IDLE) {
-                    loadImage(url, false)
+                if (MemoryManager.getBitmap(url) == null) {
+                    if (state.value.urlStates[url] == LoadState.IDLE) {
+                        loadImage(url)
+                    }
                 }
             }
         }
