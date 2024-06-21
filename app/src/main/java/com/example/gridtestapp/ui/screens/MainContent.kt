@@ -78,7 +78,9 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
         modifier = Modifier.fillMaxSize(),
         columns = GridCells.Adaptive(100.dp),
     ) {
-        itemsIndexed(state.urls.toList()) {index, url ->
+        itemsIndexed(state.urls.toList(),
+            key = { index, url -> url }
+        ) {index, url ->
 
             LaunchedEffect(index) {
                 indexesOnScreen.add(index)
