@@ -132,7 +132,7 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
 }
 
 @Composable
-private fun ImageLoader(state: MainScreenState, onEvent: OnMainEvent) {
+fun ImageLoader(state: MainScreenState, onEvent: OnMainEvent) {
     Box(
         modifier = Modifier
             .aspectRatio(1.0f)

@@ -1,7 +1,6 @@
 package com.example.gridtestapp.ui
 
 import android.app.Application
-import com.example.gridtestapp.logic.viewmodels.ImageViewModel
 import com.example.gridtestapp.logic.viewmodels.MainViewModel
 import com.example.gridtestapp.ui.navigation.Routes
 import org.koin.android.ext.koin.androidContext
@@ -21,7 +20,6 @@ class App: Application(), KoinComponent {
             modules(
                 Routes.module,
                 MainViewModel.module,
-                ImageViewModel.module,
             )
         }
 

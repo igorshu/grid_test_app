@@ -6,6 +6,7 @@ import android.content.res.Resources
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -23,11 +24,6 @@ import org.koin.androidx.compose.get
 
 class MainActivity : ComponentActivity() {
 
-    companion object {
-        private val displayMetrics = Resources.getSystem().displayMetrics
-        val minSide = minOf(displayMetrics.heightPixels, displayMetrics.widthPixels)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -44,8 +40,12 @@ class MainActivity : ComponentActivity() {
                         MainContent(mainState = mainViewModel.state, onEvent = mainViewModel::onEvent)
                     }
                     composable<ImageScreen> {
-                        val (url) = it.toRoute<ImageScreen>()
-                        val imageViewModel = get<ImageViewModel>()
+                        val (url) = remember {
+                            it.toRoute<ImageScreen>()
+                        }
+                        val imageViewModel = remember {
+                            ImageViewModel(application, url)
+                        }
                         ImageContent(url, imageViewModel.state, imageViewModel::onEvent)
                     }
                 }
