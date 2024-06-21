@@ -29,6 +29,7 @@ import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
 import com.example.gridtestapp.logic.events.OnMainEvent
 import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.MainScreenState
+import com.example.gridtestapp.ui.cache.MemoryManager
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.other.onWidthChanged
 import com.google.accompanist.systemuicontroller.SystemUiController
@@ -81,18 +82,18 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
 
             LaunchedEffect(index) {
                 indexesOnScreen.add(index)
-                onEvent(ChangeVisibleIndexes(indexesOnScreen))
+                onEvent(ChangeVisibleIndexes(indexesOnScreen, index))
             }
             DisposableEffect(index) {
                 onDispose {
                     indexesOnScreen.remove(index)
-                    onEvent(ChangeVisibleIndexes(indexesOnScreen))
+                    onEvent(ChangeVisibleIndexes(indexesOnScreen, null))
                 }
             }
 
             when (state.urlStates[url]) {
                 LoadState.LOADED -> {
-                    val imageBitmap = state.previewBitmaps[url]
+                    val imageBitmap = MemoryManager.getBitmap(url)
                     if (imageBitmap != null) {
                         Image(
                             painter = BitmapPainter(imageBitmap),

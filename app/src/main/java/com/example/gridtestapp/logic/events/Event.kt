@@ -7,7 +7,7 @@ package com.example.gridtestapp.logic.events
 // События основного экрана
 
 sealed class MainEvent
-class ChangeVisibleIndexes(val indexes: HashSet<Int>) : MainEvent()
+class ChangeVisibleIndexes(val indexesOnScreen: HashSet<Int>, val index: Int?) : MainEvent()
 class UpdateImageWidthEvent(val width: Int) : MainEvent()
 
 // События экрана с картинкой

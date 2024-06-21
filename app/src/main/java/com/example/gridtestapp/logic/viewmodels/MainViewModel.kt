@@ -13,6 +13,7 @@ import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.MainScreenState
 import com.example.gridtestapp.ui.cache.CacheManager
 import com.example.gridtestapp.ui.cache.CacheManager.previewImageBitmap
+import com.example.gridtestapp.ui.cache.MemoryManager
 import com.example.gridtestapp.ui.exceptions.ImageLoadException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,6 @@ import okhttp3.Request
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.dsl.module
-import java.util.HashSet
 import java.util.concurrent.Executors
 import kotlin.math.max
 import kotlin.math.min
@@ -75,7 +75,6 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
 
     private val _state: MutableStateFlow<MainScreenState> = MutableStateFlow(MainScreenState(
         urls = listOf(),
-        previewBitmaps = hashMapOf(),
         urlStates = hashMapOf(),
         widthConsumed = false
         ))
@@ -130,11 +129,11 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
     private fun updateLoadedState(url: String) {
         val bitmap: ImageBitmap? = previewImageBitmap(url)
         if (bitmap != null) {
+
+            MemoryManager.addBitmap(url, bitmap)
+
             _state.update {
-                val previewBitmaps = it.previewBitmaps.toMutableMap()
-                previewBitmaps[url] = bitmap
                 return@update it.copy(
-                    previewBitmaps = previewBitmaps.toMap(),
                     urlStates = it.urlStates.toMutableMap().apply { put(url, LoadState.LOADED) }
                 )
             }
@@ -144,39 +143,46 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
     fun onEvent(event: MainEvent) {
         when (event) {
             is UpdateImageWidthEvent -> changeWidth(event.width)
-            is ChangeVisibleIndexes -> updateImagesList(event.indexes.sorted())
+            is ChangeVisibleIndexes -> {
+                updateOuterImages(event.indexesOnScreen.sorted())
+                tryLoadImage(event.index)
+            }
         }
     }
 
-    private fun updateImagesList(indexesOnScreen: List<Int>) {
-        if (indexesOnScreen.isEmpty()) {
-            return
-        }
-        viewModelScope.launch(imageExceptionHandler + imageDispatcher) {
-
-            val preloadOffset = (indexesOnScreen.size * preload / 2).roundToInt()
-            val preloadRange = max(0, indexesOnScreen.first() - preloadOffset)..min(state.value.urls.size - 1, indexesOnScreen.last() + preloadOffset)
-
-            val outerUrls = state.value.urls.filterIndexed {index, _ ->
-                index !in preloadRange
-            }
-
-            _state.update {
-                val previewBitmaps = it.previewBitmaps.toMutableMap()
-                val urlStates = it.urlStates.toMutableMap()
-                outerUrls.forEach { url ->
-                    previewBitmaps.remove(url)
-                    urlStates[url] = LoadState.IDLE
-                }
-                it.copy(previewBitmaps = previewBitmaps, urlStates = urlStates)
-            }
-
-            preloadRange.forEach { index ->
+    private fun tryLoadImage(index: Int?) {
+        if (index != null) {
+            viewModelScope.launch(imageExceptionHandler + imageDispatcher) {
                 val url = state.value.urls[index]
                 if (state.value.urlStates[url] == LoadState.IDLE) {
                     loadImage(url, false)
                 }
             }
+        }
+    }
+
+    private fun updateOuterImages(indexesOnScreen: List<Int>) {
+        if (indexesOnScreen.isEmpty()) {
+            return
+        }
+
+        val preloadOffset = (indexesOnScreen.size * preload / 2).roundToInt()
+        val preloadRange = max(0, indexesOnScreen.first() - preloadOffset)..min(state.value.urls.size - 1, indexesOnScreen.last() + preloadOffset)
+
+        val outerUrls = state.value.urls.filterIndexed {index, _ ->
+            index !in preloadRange
+        }
+
+        _state.update {
+            val urlStates = it.urlStates.toMutableMap()
+            outerUrls.forEach { url ->
+                MemoryManager.removeBitmap(url)
+
+                if (urlStates[url] != LoadState.FAIL && urlStates[url] != LoadState.LOADING) {
+                    urlStates[url] = LoadState.IDLE
+                }
+            }
+            it.copy(urlStates = urlStates)
         }
     }
 
