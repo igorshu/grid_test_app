@@ -7,9 +7,8 @@ package com.example.gridtestapp.logic.events
 // События основного экрана
 
 sealed class MainEvent
-class LoadImageEvent(val url: String) : MainEvent()
+class ChangeVisibleIndexes(val indexes: HashSet<Int>) : MainEvent()
 class UpdateImageWidthEvent(val width: Int) : MainEvent()
-class DisposeImageEvent(val url: String) : MainEvent()
 
 // События экрана с картинкой
 

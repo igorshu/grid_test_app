@@ -6,13 +6,10 @@ import android.widget.Toast
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gridtestapp.logic.events.DisposeImageEvent
-import com.example.gridtestapp.logic.events.LoadImageEvent
+import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
 import com.example.gridtestapp.logic.events.MainEvent
 import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
-import com.example.gridtestapp.logic.states.Fail
-import com.example.gridtestapp.logic.states.Loaded
-import com.example.gridtestapp.logic.states.Loading
+import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.MainScreenState
 import com.example.gridtestapp.ui.cache.CacheManager
 import com.example.gridtestapp.ui.cache.CacheManager.previewImageBitmap
@@ -30,7 +27,11 @@ import okhttp3.Request
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.dsl.module
+import java.util.HashSet
 import java.util.concurrent.Executors
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 /*
 *
@@ -44,6 +45,8 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
     private val imageExceptionHandler = CoroutineExceptionHandler { _, exception -> loadImageError(exception)}
     private val imageDispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
 
+    private val preload = 0.5f
+
     private fun loadImageError(throwable: Throwable) {
         if (throwable is ImageLoadException) {
             Log.e("Error", """Unable to load ${throwable.url} because "${throwable.message}" """)
@@ -52,7 +55,7 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
 
             _state.update {
                 val url = throwable.url
-                val loadedUrls = it.urlStates.toMutableMap().apply { put(url, Fail) }
+                val loadedUrls = it.urlStates.toMutableMap().apply { put(url, LoadState.FAIL) }
                 it.copy(urlStates = loadedUrls)
             }
         } else {
@@ -71,6 +74,7 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
     }
 
     private val _state: MutableStateFlow<MainScreenState> = MutableStateFlow(MainScreenState(
+        urls = listOf(),
         previewBitmaps = hashMapOf(),
         urlStates = hashMapOf(),
         widthConsumed = false
@@ -95,13 +99,12 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
         }
 
         val lines = txt.lines()
+
+        _state.update { it.copy(urls = lines) }
+
         lines.forEach { url ->
-            if (CacheManager.isCached(url)) {
-                updateLoadedState(url)
-            } else {
-                _state.update {
-                    it.copy(urlStates = it.urlStates.toMutableMap().apply { put(url, Loading) })
-                }
+            _state.update {
+                it.copy(urlStates = it.urlStates.toMutableMap().apply { put(url, LoadState.IDLE) })
             }
         }
     }
@@ -113,7 +116,7 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
 
         if (CacheManager.isNotCached(url)) {
             _state.update {
-                it.copy(urlStates = it.urlStates.toMutableMap().apply { put(url, Loading) })
+                it.copy(urlStates = it.urlStates.toMutableMap().apply { put(url, LoadState.LOADING) })
             }
 
             if (CacheManager.loadImage(url)) {
@@ -132,7 +135,7 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
                 previewBitmaps[url] = bitmap
                 return@update it.copy(
                     previewBitmaps = previewBitmaps.toMap(),
-                    urlStates = it.urlStates.toMutableMap().apply { put(url, Loaded) }
+                    urlStates = it.urlStates.toMutableMap().apply { put(url, LoadState.LOADED) }
                 )
             }
         }
@@ -140,21 +143,40 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
 
     fun onEvent(event: MainEvent) {
         when (event) {
-            is LoadImageEvent -> {
-                viewModelScope.launch(imageExceptionHandler + imageDispatcher) {
-                    loadImage(event.url, false)
-                }
-            }
             is UpdateImageWidthEvent -> changeWidth(event.width)
-            is DisposeImageEvent -> disposeImage(event.url)
+            is ChangeVisibleIndexes -> updateImagesList(event.indexes.sorted())
         }
     }
 
-    private fun disposeImage(url: String) {
-        _state.update {
-            val previewBitmaps = it.previewBitmaps.toMutableMap()
-            previewBitmaps.remove(url)
-            it.copy(previewBitmaps = previewBitmaps)
+    private fun updateImagesList(indexesOnScreen: List<Int>) {
+        if (indexesOnScreen.isEmpty()) {
+            return
+        }
+        viewModelScope.launch(imageExceptionHandler + imageDispatcher) {
+
+            val preloadOffset = (indexesOnScreen.size * preload / 2).roundToInt()
+            val preloadRange = max(0, indexesOnScreen.first() - preloadOffset)..min(state.value.urls.size - 1, indexesOnScreen.last() + preloadOffset)
+
+            val outerUrls = state.value.urls.filterIndexed {index, _ ->
+                index !in preloadRange
+            }
+
+            _state.update {
+                val previewBitmaps = it.previewBitmaps.toMutableMap()
+                val urlStates = it.urlStates.toMutableMap()
+                outerUrls.forEach { url ->
+                    previewBitmaps.remove(url)
+                    urlStates[url] = LoadState.IDLE
+                }
+                it.copy(previewBitmaps = previewBitmaps, urlStates = urlStates)
+            }
+
+            preloadRange.forEach { index ->
+                val url = state.value.urls[index]
+                if (state.value.urlStates[url] == LoadState.IDLE) {
+                    loadImage(url, false)
+                }
+            }
         }
     }
 

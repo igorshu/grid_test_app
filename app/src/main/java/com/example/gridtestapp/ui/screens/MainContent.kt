@@ -1,5 +1,6 @@
 package com.example.gridtestapp.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,17 +19,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import com.example.gridtestapp.logic.events.DisposeImageEvent
-import com.example.gridtestapp.logic.events.LoadImageEvent
+import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
 import com.example.gridtestapp.logic.events.OnMainEvent
-import com.example.gridtestapp.logic.states.Fail
-import com.example.gridtestapp.logic.states.Loaded
-import com.example.gridtestapp.logic.states.Loading
+import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.MainScreenState
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.other.onWidthChanged
@@ -56,7 +55,7 @@ fun MainContent(mainState: StateFlow<MainScreenState>, onEvent: OnMainEvent) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        if (state.value.urlStates.isEmpty()) {
+        if (state.value.urls.isEmpty()) {
             Loader()
         } else {
             ImageGrid(state.value,
@@ -69,13 +68,30 @@ fun MainContent(mainState: StateFlow<MainScreenState>, onEvent: OnMainEvent) {
 
 @Composable
 fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url: String) -> Unit) {
+
+    val indexesOnScreen = remember {
+        hashSetOf<Int>()
+    }
+
     LazyVerticalGrid(
         modifier = Modifier.fillMaxSize(),
         columns = GridCells.Adaptive(100.dp),
     ) {
-        itemsIndexed(state.urlStates.keys.toList()) {index, url ->
+        itemsIndexed(state.urls.toList()) {index, url ->
+
+            LaunchedEffect(index) {
+                indexesOnScreen.add(index)
+                onEvent(ChangeVisibleIndexes(indexesOnScreen))
+            }
+            DisposableEffect(index) {
+                onDispose {
+                    indexesOnScreen.remove(index)
+                    onEvent(ChangeVisibleIndexes(indexesOnScreen))
+                }
+            }
+
             when (state.urlStates[url]) {
-                is Loaded -> {
+                LoadState.LOADED -> {
                     val imageBitmap = state.previewBitmaps[url]
                     if (imageBitmap != null) {
                         Image(
@@ -90,25 +106,14 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
                                 })
                                 .onWidthChanged(state, onEvent),
                         )
-                        DisposableEffect(url) {
-                          onDispose {
-                              onEvent(DisposeImageEvent(url))
-                          }
-                        }
                     } else {
                         Box(modifier = Modifier.aspectRatio(1.0f)) {}
-                        LaunchedEffect(url) {
-                            onEvent(LoadImageEvent(url))
-                        }
                     }
                 }
-                is Loading -> {
+                LoadState.LOADING -> {
                     ImageLoader(state, onEvent)
-                    LaunchedEffect(url) {
-                        onEvent(LoadImageEvent(url))
-                    }
                 }
-                is Fail -> {
+                LoadState.FAIL -> {
                     Box(
                         modifier = Modifier.aspectRatio(1.0f),
                         contentAlignment = Alignment.Center,
@@ -116,9 +121,10 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
                         Text("Ошибка")
                     }
                 }
-                else -> {
-                    Box {}
+                LoadState.IDLE -> {
+                    ImageLoader(state, onEvent)
                 }
+                else -> {}
             }
         }
     }
