@@ -23,6 +23,7 @@ import com.example.gridtestapp.ui.exceptions.ImageLoadException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,7 +35,9 @@ import okhttp3.Request
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.dsl.module
+import java.net.URL
 import java.util.concurrent.Executors
+import javax.net.ssl.HttpsURLConnection
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -97,6 +100,32 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
             initConnectivity()
             CacheManager.init(application)
             loadLinks()
+            startPinger()
+        }
+    }
+
+    private fun startPinger() {
+        viewModelScope.launch(handler + Dispatchers.IO) {
+            while (true) {
+                delay(15_000) // 15 seconds
+                checkSiteUrl()
+            }
+        }
+    }
+
+    private fun checkSiteUrl() {
+        try {
+            val url = URL(MAIN_URL)
+            val connection: HttpsURLConnection = url.openConnection() as HttpsURLConnection
+            connection.connect()
+            connection.disconnect()
+
+            if (!state.value.inetAvailable) {
+                _state.update {  it.copy(inetAvailable = true) }
+                restoreAfterDisconnect()
+            }
+        } catch (e: Exception) {
+            _state.update {  it.copy(inetAvailable = false) }
         }
     }
 
@@ -112,32 +141,7 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
                 super.onAvailable(network)
 
                 _state.update { it.copy(inetAvailable = true) }
-
-                if (state.value.urls.isEmpty()) {
-                    viewModelScope.launch(handler + Dispatchers.IO) {
-                        loadLinks()
-                    }
-                    return
-                }
-
-                val newState = _state.updateAndGet {
-                    val urlStates = it.urlStates.entries.associate { entry ->
-                        if (entry.value == LoadState.LOADING || entry.value == LoadState.FAIL) {
-                            entry.key to LoadState.IDLE
-                        } else {
-                            entry.toPair()
-                        }
-                    }
-
-                    it.copy(urlStates = urlStates)
-                }
-
-                newState
-                    .urls
-                    .subList(state.value.preloadRange.first, state.value.preloadRange.last)
-                    .forEach { url ->
-                        tryLoadImage(url)
-                    }
+                restoreAfterDisconnect()
             }
 
             override fun onUnavailable() {
@@ -157,9 +161,45 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
         connectivityManager.requestNetwork(networkRequest, networkCallback)
     }
 
+    /*
+    *
+    *  Функция где мы восстанавливаем состояние Grid-а
+    *  Если надо подгружаем список урлов
+    *  Также подгружаем незагрузившиеся картинки в preload-е и на экране
+    *
+     */
+
+    private fun restoreAfterDisconnect() {
+        if (state.value.urls.isEmpty()) {
+            viewModelScope.launch(handler + Dispatchers.IO) {
+                loadLinks()
+            }
+            return
+        }
+
+        val newState = _state.updateAndGet {
+            val urlStates = it.urlStates.entries.associate { entry ->
+                if (entry.value == LoadState.LOADING || entry.value == LoadState.FAIL) {
+                    entry.key to LoadState.IDLE
+                } else {
+                    entry.toPair()
+                }
+            }
+
+            it.copy(urlStates = urlStates)
+        }
+
+        newState
+            .urls
+            .subList(state.value.preloadRange.first, state.value.preloadRange.last)
+            .forEach { url ->
+                tryLoadImage(url)
+            }
+    }
+
     private fun loadLinks() {
         val request: Request = Request.Builder()
-            .url("https://it-link.ru/test/images.txt")
+            .url(MAIN_URL)
             .build()
 
         val txt = OkHttpClient().newCall(request).execute().use {
@@ -260,6 +300,7 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
     }
 
     companion object {
+        const val MAIN_URL: String = "https://it-link.ru/test/images.txt"
         val module = module {
             single { MainViewModel(get()) }
             single { ImageWidth(1) }
