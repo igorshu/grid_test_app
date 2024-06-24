@@ -17,6 +17,12 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import java.io.File
 import java.io.FileOutputStream
+import java.security.SecureRandom
+import java.security.cert.CertificateException
+import java.security.cert.X509Certificate
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -62,7 +68,9 @@ object CacheManager: KoinComponent {
                 .url(url)
                 .build()
 
-            val response: Response = OkHttpClient().newCall(request).execute()
+            val okHttpClient = trustAllImageClient()
+
+            val response: Response = okHttpClient.newCall(request).execute()
             if (!response.isSuccessful) {
                 cont.resumeWithException(ImageLoadException(url, "code=${response.code} and message=${response.message}"))
                 return@suspendCancellableCoroutine
@@ -81,6 +89,33 @@ object CacheManager: KoinComponent {
 
             cont.resume(true)
         }
+    }
+
+    private fun trustAllImageClient(): OkHttpClient {
+        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+            @Throws(CertificateException::class)
+            override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {
+            }
+
+            @Throws(CertificateException::class)
+            override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
+            }
+
+            override fun getAcceptedIssuers(): Array<X509Certificate> {
+                return arrayOf()
+            }
+        })
+
+        val sslContext = SSLContext.getInstance("SSL")
+        sslContext.init(null, trustAllCerts, SecureRandom())
+        val sslSocketFactory = sslContext.socketFactory
+
+        val okHttpClient = OkHttpClient
+            .Builder()
+            .sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
+            .hostnameVerifier { _, _ -> true }
+            .build()
+        return okHttpClient
     }
 
     // Сохраняем оригинальную картинку
