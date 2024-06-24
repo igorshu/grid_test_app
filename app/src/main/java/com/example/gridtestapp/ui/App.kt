@@ -2,6 +2,7 @@ package com.example.gridtestapp.ui
 
 import android.app.Application
 import com.example.gridtestapp.logic.viewmodels.MainViewModel
+import com.example.gridtestapp.logic.viewmodels.TopBarViewModel
 import com.example.gridtestapp.ui.navigation.Routes
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.component.KoinComponent
@@ -20,6 +21,7 @@ class App: Application(), KoinComponent {
             modules(
                 Routes.module,
                 MainViewModel.module,
+                TopBarViewModel.module,
             )
         }
 

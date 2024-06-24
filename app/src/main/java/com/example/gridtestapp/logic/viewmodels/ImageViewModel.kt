@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridtestapp.logic.events.ImageEvent
-import com.example.gridtestapp.logic.events.ToggleBarsEvent
+import com.example.gridtestapp.logic.events.ToggleBars
 import com.example.gridtestapp.logic.states.ImageScreenState
 import com.example.gridtestapp.ui.cache.CacheManager
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +34,7 @@ class ImageViewModel(private val application: Application, val url: String): And
 
     fun onEvent(event: ImageEvent) {
         when (event) {
-            is ToggleBarsEvent -> toggleBars()
+            is ToggleBars -> toggleBars()
         }
     }
 
