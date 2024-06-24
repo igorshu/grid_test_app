@@ -1,9 +1,14 @@
 package com.example.gridtestapp.logic.viewmodels
 
 import android.app.Application
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
@@ -22,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -48,21 +54,23 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
     private val preload = 0.5f
 
     private fun loadImageError(throwable: Throwable) {
-        if (throwable is ImageLoadException) {
-            Log.e("Error", """Unable to load ${throwable.url} because "${throwable.message}" """)
+        if (state.value.inetAvailable) {
+            if (throwable is ImageLoadException) {
+                Log.e("Error", """Unable to load ${throwable.url} because "${throwable.message}" """)
 
-            CacheManager.removeBothImages(throwable.url)
+                CacheManager.removeBothImages(throwable.url)
 
-            _state.update {
-                val url = throwable.url
-                val loadedUrls = it.urlStates.toMutableMap().apply { put(url, LoadState.FAIL) }
-                it.copy(urlStates = loadedUrls)
-            }
-        } else {
-            Log.e("Error", throwable.message.toString())
+                _state.update {
+                    val url = throwable.url
+                    val loadedUrls = it.urlStates.toMutableMap().apply { put(url, LoadState.FAIL) }
+                    it.copy(urlStates = loadedUrls)
+                }
+            } else {
+                Log.e("Error", throwable.message.toString())
 
-            viewModelScope.launch {
-                Toast.makeText(application, throwable.message, Toast.LENGTH_LONG).show()
+                viewModelScope.launch (handler) {
+                    Toast.makeText(application, throwable.message.toString(), Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
@@ -76,16 +84,77 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
     private val _state: MutableStateFlow<MainScreenState> = MutableStateFlow(MainScreenState(
         urls = listOf(),
         urlStates = hashMapOf(),
-        widthConsumed = false
+        widthConsumed = false,
+        inetAvailable = true,
+        screenRange = IntRange(0, 0),
+        preloadRange = IntRange(0, 0),
         ))
     val state: StateFlow<MainScreenState> = _state.asStateFlow()
 
 
     init {
         viewModelScope.launch(handler + Dispatchers.IO) {
+            initConnectivity()
             CacheManager.init(application)
             loadLinks()
         }
+    }
+
+    private fun initConnectivity() {
+        val networkRequest = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+            .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            .build()
+
+        val networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                super.onAvailable(network)
+
+                _state.update { it.copy(inetAvailable = true) }
+
+                if (state.value.urls.isEmpty()) {
+                    viewModelScope.launch(handler + Dispatchers.IO) {
+                        loadLinks()
+                    }
+                    return
+                }
+
+                val newState = _state.updateAndGet {
+                    val urlStates = it.urlStates.entries.associate { entry ->
+                        if (entry.value == LoadState.LOADING || entry.value == LoadState.FAIL) {
+                            entry.key to LoadState.IDLE
+                        } else {
+                            entry.toPair()
+                        }
+                    }
+
+                    it.copy(urlStates = urlStates)
+                }
+
+                newState
+                    .urls
+                    .subList(state.value.preloadRange.first, state.value.preloadRange.last)
+                    .forEach { url ->
+                        tryLoadImage(url)
+                    }
+            }
+
+            override fun onUnavailable() {
+                super.onUnavailable()
+
+                _state.update { it.copy(inetAvailable = false) }
+            }
+
+            override fun onLost(network: Network) {
+                super.onLost(network)
+
+                _state.update { it.copy(inetAvailable = false) }
+            }
+        }
+
+        val connectivityManager = getSystemService(application, ConnectivityManager::class.java) as ConnectivityManager
+        connectivityManager.requestNetwork(networkRequest, networkCallback)
     }
 
     private fun loadLinks() {
@@ -141,19 +210,19 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
             is UpdateImageWidthEvent -> changeWidth(event.width)
             is ChangeVisibleIndexes -> {
                 updateOuterImages(event.indexesOnScreen.sorted())
-                tryLoadImage(event.index)
+                if (event.index != null) {
+                    val url = state.value.urls[event.index]
+                    tryLoadImage(url)
+                }
             }
         }
     }
 
-    private fun tryLoadImage(index: Int?) {
-        if (index != null) {
-            viewModelScope.launch(imageExceptionHandler + imageCacheDispatcher) {
-                val url = state.value.urls[index]
-                if (MemoryManager.getBitmap(url) == null) {
-                    if (state.value.urlStates[url] == LoadState.IDLE) {
-                        loadImage(url)
-                    }
+    private fun tryLoadImage(url: String) {
+        viewModelScope.launch(imageExceptionHandler + imageCacheDispatcher) {
+            if (MemoryManager.getBitmap(url) == null) {
+                if (state.value.urlStates[url] == LoadState.IDLE) {
+                    loadImage(url)
                 }
             }
         }
@@ -164,6 +233,7 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
             return
         }
 
+        val screenRange = indexesOnScreen.first()..indexesOnScreen.last()
         val preloadOffset = (indexesOnScreen.size * preload / 2).roundToInt()
         val preloadRange = max(0, indexesOnScreen.first() - preloadOffset)..min(state.value.urls.size - 1, indexesOnScreen.last() + preloadOffset)
 
@@ -180,7 +250,7 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
                     urlStates[url] = LoadState.IDLE
                 }
             }
-            it.copy(urlStates = urlStates)
+            it.copy(urlStates = urlStates, screenRange = screenRange, preloadRange = preloadRange)
         }
     }
 
