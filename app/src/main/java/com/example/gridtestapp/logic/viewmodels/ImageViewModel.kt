@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 class ImageViewModel(private val application: Application, val url: String): AndroidViewModel(application) {
 
     private val _state: MutableStateFlow<ImageScreenState> = MutableStateFlow(ImageScreenState(
-        showTopBar = true,
+        showSystemBars = true,
         imageLoaded = false,
         null,
     ))
@@ -49,7 +49,7 @@ class ImageViewModel(private val application: Application, val url: String): And
 
     private fun toggleBars() {
         _state.update {
-            it.copy(showTopBar = it.showTopBar.not())
+            it.copy(showSystemBars = it.showSystemBars.not())
         }
     }
 }

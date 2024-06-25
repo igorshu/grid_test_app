@@ -3,6 +3,7 @@ package com.example.gridtestapp.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
@@ -15,7 +16,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.unit.dp
 import com.example.gridtestapp.logic.events.OnImageEvent
 import com.example.gridtestapp.logic.events.OnTopBarEvent
 import com.example.gridtestapp.logic.events.ToggleBars
@@ -44,24 +44,33 @@ fun ImageContent(
     val top = remember {
         paddingValues.calculateTopPadding()
     }
+    val bottom = remember {
+        paddingValues.calculateBottomPadding()
+    }
 
     val systemUiController: SystemUiController = rememberSystemUiController()
-    systemUiController.isSystemBarsVisible = state.value.showTopBar
+    systemUiController.isSystemBarsVisible = state.value.showSystemBars
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = if (paddingValues.calculateTopPadding() == 0.dp) top else 0.dp )
+            .padding(
+                top = top - paddingValues.calculateTopPadding(),
+                bottom = bottom - paddingValues.calculateBottomPadding(),
+            )
             .background(MaterialTheme.colorScheme.background)
     ) {
-
         if (state.value.image != null) {
+            val interactionSource = remember { MutableInteractionSource() }
             Image(
                 painter = BitmapPainter(state.value.image!!),
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable {
+                    .clickable(
+                        interactionSource,
+                        indication = null,
+                    ) {
                         onEvent(ToggleBars)
                         onTopBarEvent(ToggleTopBar)
                     }
