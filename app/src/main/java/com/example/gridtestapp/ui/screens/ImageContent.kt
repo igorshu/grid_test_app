@@ -16,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 import com.example.gridtestapp.logic.events.OnImageEvent
 import com.example.gridtestapp.logic.events.OnTopBarEvent
 import com.example.gridtestapp.logic.events.ToggleBars
@@ -49,6 +50,7 @@ fun ImageContent(
     }
 
     val systemUiController: SystemUiController = rememberSystemUiController()
+    systemUiController.systemBarsBehavior = BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     systemUiController.isSystemBarsVisible = state.value.showSystemBars
 
     Box(
