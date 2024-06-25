@@ -25,7 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.gridtestapp.logic.viewmodels.ImageViewModel
 import com.example.gridtestapp.logic.viewmodels.MainViewModel
-import com.example.gridtestapp.logic.viewmodels.TopBarViewModel
+import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.screens.ImageContent
 import com.example.gridtestapp.ui.screens.ImageScreen
@@ -45,11 +45,11 @@ class MainActivity : ComponentActivity() {
             GridTestAppTheme {
                 val navController = rememberNavController()
                 val routes = get<Routes>()
-                val topBarViewModel = get<TopBarViewModel>()
+                val appViewModel = get<AppViewModel>()
 
-                val topBarState = topBarViewModel.state.collectAsState()
+                val topBarState = appViewModel.state.collectAsState()
 
-                routes.setController(navController, topBarViewModel::onEvent)
+                routes.setController(navController, appViewModel::onEvent)
 
                 Scaffold(
                     topBar = {
@@ -91,7 +91,11 @@ class MainActivity : ComponentActivity() {
                             val imageViewModel = remember {
                                 ImageViewModel(application, url)
                             }
-                            ImageContent(imageViewModel.state, imageViewModel::onEvent, topBarViewModel::onEvent, paddingValues)
+                            ImageContent(imageViewModel.state,
+                                appViewModel.state,
+                                imageViewModel::onEvent,
+                                appViewModel::onEvent,
+                                paddingValues)
                         }
                     }
                 }

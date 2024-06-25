@@ -4,7 +4,6 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridtestapp.logic.events.ImageEvent
-import com.example.gridtestapp.logic.events.ToggleBars
 import com.example.gridtestapp.logic.states.ImageScreenState
 import com.example.gridtestapp.ui.cache.CacheManager
 import kotlinx.coroutines.Dispatchers
@@ -22,7 +21,6 @@ import kotlinx.coroutines.launch
 class ImageViewModel(private val application: Application, val url: String): AndroidViewModel(application) {
 
     private val _state: MutableStateFlow<ImageScreenState> = MutableStateFlow(ImageScreenState(
-        showSystemBars = true,
         imageLoaded = false,
         null,
     ))
@@ -32,11 +30,7 @@ class ImageViewModel(private val application: Application, val url: String): And
         loadOriginalImage(url)
     }
 
-    fun onEvent(event: ImageEvent) {
-        when (event) {
-            is ToggleBars -> toggleBars()
-        }
-    }
+    fun onEvent(event: ImageEvent) { }
 
     private fun loadOriginalImage(url: String) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -44,12 +38,6 @@ class ImageViewModel(private val application: Application, val url: String): And
             _state.update {
                 it.copy(image = bitmap)
             }
-        }
-    }
-
-    private fun toggleBars() {
-        _state.update {
-            it.copy(showSystemBars = it.showSystemBars.not())
         }
     }
 }

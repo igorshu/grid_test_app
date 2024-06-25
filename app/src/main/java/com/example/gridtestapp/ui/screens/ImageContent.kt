@@ -19,8 +19,9 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 import com.example.gridtestapp.logic.events.OnImageEvent
 import com.example.gridtestapp.logic.events.OnTopBarEvent
-import com.example.gridtestapp.logic.events.ToggleBars
+import com.example.gridtestapp.logic.events.ToggleSystemBars
 import com.example.gridtestapp.logic.events.ToggleTopBar
+import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.ImageScreenState
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -35,13 +36,15 @@ import net.engawapg.lib.zoomable.zoomable
 */
 @Composable
 fun ImageContent(
-    imageState: StateFlow<ImageScreenState>,
+    imageStateFlow: StateFlow<ImageScreenState>,
+    appStateFlow: StateFlow<AppState>,
     onEvent: OnImageEvent,
     onTopBarEvent: OnTopBarEvent,
     paddingValues: PaddingValues,
 ) {
 
-    val state = imageState.collectAsState()
+    val imageState = imageStateFlow.collectAsState()
+    val appState = appStateFlow.collectAsState()
     val top = remember {
         paddingValues.calculateTopPadding()
     }
@@ -51,7 +54,7 @@ fun ImageContent(
 
     val systemUiController: SystemUiController = rememberSystemUiController()
     systemUiController.systemBarsBehavior = BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-    systemUiController.isSystemBarsVisible = state.value.showSystemBars
+    systemUiController.isSystemBarsVisible = appState.value.showSystemBars
 
     Box(
         modifier = Modifier
@@ -62,10 +65,10 @@ fun ImageContent(
             )
             .background(MaterialTheme.colorScheme.background)
     ) {
-        if (state.value.image != null) {
+        if (imageState.value.image != null) {
             val interactionSource = remember { MutableInteractionSource() }
             Image(
-                painter = BitmapPainter(state.value.image!!),
+                painter = BitmapPainter(imageState.value.image!!),
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize()
@@ -73,8 +76,8 @@ fun ImageContent(
                         interactionSource,
                         indication = null,
                     ) {
-                        onEvent(ToggleBars)
                         onTopBarEvent(ToggleTopBar)
+                        onTopBarEvent(ToggleSystemBars)
                     }
                     .zoomable(rememberZoomState())
             )

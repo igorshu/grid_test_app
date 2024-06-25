@@ -6,10 +6,11 @@ package com.example.gridtestapp.logic.events
 
 // События топ бара
 
-sealed class TopBarEvent
-data object ToggleTopBar : TopBarEvent()
-data class MainTopBar(val url: String) : TopBarEvent()
-data object ImageTopBar : TopBarEvent()
+sealed class AppEvent
+data object ToggleTopBar : AppEvent()
+data object ToggleSystemBars : AppEvent()
+data object MainScreenEvent : AppEvent()
+data class ImageScreenEvent(val url: String) : AppEvent()
 
 // События основного экрана
 
@@ -20,5 +21,3 @@ class UpdateImageWidthEvent(val width: Int) : MainEvent()
 // События экрана с картинкой
 
 sealed class ImageEvent
-data object ToggleBars : ImageEvent()
-

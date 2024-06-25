@@ -1,8 +1,8 @@
 package com.example.gridtestapp.ui.navigation
 
 import androidx.navigation.NavHostController
-import com.example.gridtestapp.logic.events.ImageTopBar
-import com.example.gridtestapp.logic.events.MainTopBar
+import com.example.gridtestapp.logic.events.ImageScreenEvent
+import com.example.gridtestapp.logic.events.MainScreenEvent
 import com.example.gridtestapp.logic.events.OnTopBarEvent
 import org.koin.dsl.module
 
@@ -27,9 +27,9 @@ class Routes() {
 
         navController.addOnDestinationChangedListener { _, destination, arguments ->
             if (destination.route?.contains("ImageScreen") == true) {
-                onTopBarEvent(MainTopBar(url = arguments!!.getString("url")!!))
+                onTopBarEvent(ImageScreenEvent(url = arguments!!.getString("url")!!))
             } else {
-                onTopBarEvent(ImageTopBar)
+                onTopBarEvent(MainScreenEvent)
             }
         }
     }
