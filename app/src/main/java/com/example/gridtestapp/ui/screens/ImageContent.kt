@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 import com.example.gridtestapp.logic.events.OnImageEvent
-import com.example.gridtestapp.logic.events.OnTopBarEvent
+import com.example.gridtestapp.logic.events.OnAppBarEvent
 import com.example.gridtestapp.logic.events.ToggleSystemBars
 import com.example.gridtestapp.logic.events.ToggleTopBar
 import com.example.gridtestapp.logic.states.AppState
@@ -39,7 +39,7 @@ fun ImageContent(
     imageStateFlow: StateFlow<ImageScreenState>,
     appStateFlow: StateFlow<AppState>,
     onEvent: OnImageEvent,
-    onTopBarEvent: OnTopBarEvent,
+    onAppBarEvent: OnAppBarEvent,
     paddingValues: PaddingValues,
 ) {
 
@@ -76,8 +76,8 @@ fun ImageContent(
                         interactionSource,
                         indication = null,
                     ) {
-                        onTopBarEvent(ToggleTopBar)
-                        onTopBarEvent(ToggleSystemBars)
+                        onAppBarEvent(ToggleTopBar)
+                        onAppBarEvent(ToggleSystemBars)
                     }
                     .zoomable(rememberZoomState())
             )

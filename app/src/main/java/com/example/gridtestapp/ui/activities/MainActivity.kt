@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
 import com.example.gridtestapp.logic.viewmodels.ImageViewModel
 import com.example.gridtestapp.logic.viewmodels.MainViewModel
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
@@ -78,18 +77,16 @@ class MainActivity : ComponentActivity() {
                     NavHost(
                         modifier = Modifier.padding(paddingValues),
                         navController = navController,
-                        startDestination = MainScreen,
+                        startDestination = Routes.MAIN,
                     ) {
-                        composable<MainScreen> {
+                        composable(Routes.MAIN) {
                             val mainViewModel = get<MainViewModel>()
                             MainContent(mainState = mainViewModel.state, onEvent = mainViewModel::onEvent)
                         }
-                        composable<ImageScreen> {
-                            val (url) = remember {
-                                it.toRoute<ImageScreen>()
-                            }
+                        composable(Routes.IMAGE) { backStackEntry ->
+                            val url = backStackEntry.arguments?.getString("url")
                             val imageViewModel = remember {
-                                ImageViewModel(application, url)
+                                ImageViewModel(application, url!!)
                             }
                             ImageContent(imageViewModel.state,
                                 appViewModel.state,

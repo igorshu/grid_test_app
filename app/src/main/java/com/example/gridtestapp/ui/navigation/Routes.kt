@@ -3,7 +3,7 @@ package com.example.gridtestapp.ui.navigation
 import androidx.navigation.NavHostController
 import com.example.gridtestapp.logic.events.ImageScreenEvent
 import com.example.gridtestapp.logic.events.MainScreenEvent
-import com.example.gridtestapp.logic.events.OnTopBarEvent
+import com.example.gridtestapp.logic.events.OnAppBarEvent
 import org.koin.dsl.module
 
 /**
@@ -15,21 +15,21 @@ class Routes() {
 
     private lateinit var navController: NavHostController
 
-    fun <T: Any> navigate(route: T) {
+    fun navigate(route: String) {
         navController.navigate(route)
     }
 
     fun setController(
         navController: NavHostController,
-        onTopBarEvent: OnTopBarEvent
+        onAppBarEvent: OnAppBarEvent
     ) {
         this.navController = navController
 
         navController.addOnDestinationChangedListener { _, destination, arguments ->
-            if (destination.route?.contains("ImageScreen") == true) {
-                onTopBarEvent(ImageScreenEvent(url = arguments!!.getString("url")!!))
-            } else {
-                onTopBarEvent(MainScreenEvent)
+            if (destination.route == MAIN) {
+                onAppBarEvent(MainScreenEvent)
+            } else if (destination.route == IMAGE) {
+                onAppBarEvent(ImageScreenEvent(url = arguments!!.getString("url")!!))
             }
         }
     }
@@ -39,6 +39,9 @@ class Routes() {
     }
 
     companion object {
+        const val MAIN = "main"
+        const val IMAGE = "image/{url}"
+
         val module = module {
             single { Routes() }
         }
