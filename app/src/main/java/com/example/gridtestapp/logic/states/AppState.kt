@@ -14,5 +14,6 @@ data class AppState (
     val showSystemBars: Boolean,
     val title: String,
     val currentScreen: Screen,
+    val shareUrl: String?
 
 )

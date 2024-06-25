@@ -9,6 +9,7 @@ package com.example.gridtestapp.logic.events
 sealed class AppEvent
 data object ToggleTopBar : AppEvent()
 data object ToggleSystemBars : AppEvent()
+data object SharePressed : AppEvent()
 data object MainScreenEvent : AppEvent()
 data class ImageScreenEvent(val url: String) : AppEvent()
 
