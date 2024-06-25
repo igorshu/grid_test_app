@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,10 +19,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import com.example.gridtestapp.R
+import com.example.gridtestapp.ui.theme.DarkColorScheme
+import com.example.gridtestapp.ui.theme.LightColorScheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -52,14 +56,20 @@ class SplashActivity: ComponentActivity() {
                 }
             }
 
+            val colorScheme = when {
+                isSystemInDarkTheme() -> DarkColorScheme
+                else -> LightColorScheme
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.White),
+                    .background(colorScheme.primary),
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
                     painterResource(id = R.drawable.splash_icon),
+                    colorFilter = ColorFilter.tint(iconColor(isSystemInDarkTheme())),
                     contentDescription = "",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -68,5 +78,10 @@ class SplashActivity: ComponentActivity() {
                 )
             }
         }
+    }
+
+    private fun iconColor(black: Boolean): Color = when {
+        black -> Color.White
+        else -> Color.Black
     }
 }
