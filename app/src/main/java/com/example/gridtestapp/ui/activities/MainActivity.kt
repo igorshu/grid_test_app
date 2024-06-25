@@ -1,4 +1,4 @@
-package com.example.gridtestapp
+package com.example.gridtestapp.ui.activities
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
