@@ -4,4 +4,5 @@
     <string name="load_again">Загрузить снова</string>
     <string name="loading_error">Ошибка загрузки</string>
     <string name="not_valid_url">Не валидный урл</string>
+    <string name="ok">ОК</string>
 </resources>

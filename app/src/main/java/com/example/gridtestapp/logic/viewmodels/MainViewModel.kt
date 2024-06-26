@@ -251,7 +251,6 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
             _state.update {
                 it.copy(urlStates = it.urlStates.toMutableMap().apply { put(url, LoadState.LOADING) })
             }
-
             if (CacheManager.loadImage(url)) {
                 updateLoadedState(url)
             }

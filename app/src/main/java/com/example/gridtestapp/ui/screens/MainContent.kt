@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -175,7 +176,7 @@ private fun ImageFailDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(10.dp))
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             Column(
                 modifier = Modifier
@@ -190,13 +191,17 @@ private fun ImageFailDialog(
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(imageError.errorMessage)
                 Spacer(modifier = Modifier.height(5.dp))
-                if (imageError.canBeLoad) {
-                    Button(
-                        modifier = Modifier.padding(top = 15.dp),
-                        onClick = { onEvent(LoadImageAgain(url)) }
-                    ) {
-                        Text(stringResource(id = R.string.load_again))
+                Button(
+                    modifier = Modifier.padding(top = 15.dp),
+                    onClick = {
+                        if (imageError.canBeLoad) {
+                            onEvent(LoadImageAgain(url))
+                        } else {
+                            onEvent(DismissImageFailDialog)
+                        }
                     }
+                ) {
+                    Text(stringResource(id = R.string.ok))
                 }
             }
         }
