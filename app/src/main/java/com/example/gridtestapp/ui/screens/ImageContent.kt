@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -23,6 +24,7 @@ import com.example.gridtestapp.logic.events.ToggleSystemBars
 import com.example.gridtestapp.logic.events.ToggleTopBar
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.ImageScreenState
+import com.example.gridtestapp.ui.navigation.Routes
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +42,7 @@ fun ImageContent(
     appStateFlow: StateFlow<AppState>,
     onEvent: OnImageEvent,
     onAppBarEvent: OnAppBarEvent,
+    routes: Routes,
     paddingValues: PaddingValues,
 ) {
 
@@ -63,12 +66,23 @@ fun ImageContent(
                 top = top - paddingValues.calculateTopPadding(),
                 bottom = bottom - paddingValues.calculateBottomPadding(),
             )
-            .background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.background),
+        contentAlignment = Alignment.Center
     ) {
         if (imageState.value.image != null) {
             val interactionSource = remember { MutableInteractionSource() }
+
+            val painter = BitmapPainter(imageState.value.image!!)
+            val zoomState = rememberZoomState(
+                minScale = 0.011f,
+                maxScale = 10f,
+                exitScale = 0.6f,
+                onExit = routes::goBack
+            )
+            println("zoomState.scale = ${zoomState.scale}")
+
             Image(
-                painter = BitmapPainter(imageState.value.image!!),
+                painter = painter,
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize()
@@ -79,7 +93,7 @@ fun ImageContent(
                         onAppBarEvent(ToggleTopBar)
                         onAppBarEvent(ToggleSystemBars)
                     }
-                    .zoomable(rememberZoomState())
+                    .zoomable(zoomState)
             )
         } else {
             Box(

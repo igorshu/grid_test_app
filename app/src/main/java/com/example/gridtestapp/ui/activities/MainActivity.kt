@@ -76,6 +76,7 @@ class MainActivity : ComponentActivity() {
                                 appViewModel.state,
                                 imageViewModel::onEvent,
                                 appViewModel::onEvent,
+                                routes,
                                 paddingValues)
                         }
                     }
