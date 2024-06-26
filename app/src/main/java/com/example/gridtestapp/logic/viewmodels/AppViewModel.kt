@@ -5,10 +5,9 @@ import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import com.example.gridtestapp.logic.events.ImageScreenEvent
 import com.example.gridtestapp.logic.events.MainScreenEvent
-import com.example.gridtestapp.logic.events.ToggleSystemBars
-import com.example.gridtestapp.logic.events.ToggleTopBar
 import com.example.gridtestapp.logic.events.AppEvent
 import com.example.gridtestapp.logic.events.SharePressed
+import com.example.gridtestapp.logic.events.ToggleFullScreen
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.Screen
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,11 +34,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
     fun onEvent(event: AppEvent) {
         when (event) {
-            is ToggleTopBar -> _state.update {
-                if (it.currentScreen == Screen.IMAGE) { it.copy(showTopBar = !it.showTopBar) } else { it }
-            }
-            is ToggleSystemBars -> _state.update {
-                if (it.currentScreen == Screen.IMAGE) { it.copy(showSystemBars = !it.showSystemBars) } else { it }
+            is ToggleFullScreen -> _state.update {
+                if (it.currentScreen == Screen.IMAGE) { it.copy(showTopBar = !it.showTopBar, showSystemBars = !it.showSystemBars) } else { it }
             }
             is MainScreenEvent -> _state.update {
                 it.copy(
