@@ -11,8 +11,13 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import arrow.core.None
+import arrow.core.Option
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
+import com.example.gridtestapp.logic.events.DismissImageFailDialog
+import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.MainEvent
+import com.example.gridtestapp.logic.events.ShowImageFailDialog
 import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
 import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.MainScreenState
@@ -35,8 +40,10 @@ import okhttp3.Request
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.dsl.module
+import java.io.FileNotFoundException
 import java.net.URL
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeoutException
 import javax.net.ssl.HttpsURLConnection
 import kotlin.math.max
 import kotlin.math.min
@@ -44,7 +51,7 @@ import kotlin.math.roundToInt
 
 /*
 *
-*   Вью модель для главоного экрана с превьюшками
+*   Вью модель для главного экрана с превьюшками
 *
 */
 class MainViewModel(private val application: Application): AndroidViewModel(application),
@@ -58,21 +65,41 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
 
     private fun loadImageError(throwable: Throwable) {
         if (state.value.inetAvailable) {
-            if (throwable is ImageLoadException) {
-                Log.e("Error", """Unable to load ${throwable.url} because "${throwable.message}" """)
+            when (throwable) {
+                is ImageLoadException -> {
+                    val (errorMessage, canBeLoad) = if (throwable.innerException == null) {
+                        Log.e("Error", """Unable to load ${throwable.url} because "${throwable.message}" """)
+                        throwable.message!! to throwable.validUrl
+                    } else {
+                        Log.e("Error", """Unable to load ${throwable.url} with exception ${throwable.innerException} (${throwable.localizedMessage}) """)
+                        val canBeLoad = when (throwable.innerException) {
+                            is FileNotFoundException -> {
+                                true
+                            }
+                            is TimeoutException -> {
+                                true
+                            }
+                            else -> {
+                                false
+                            }
+                        }
+                        (throwable.innerException.message ?: "Неизвестная ошибка") to canBeLoad
+                    }
 
-                CacheManager.removeBothImages(throwable.url)
+                    CacheManager.removeBothImages(throwable.url)
 
-                _state.update {
-                    val url = throwable.url
-                    val loadedUrls = it.urlStates.toMutableMap().apply { put(url, LoadState.FAIL) }
-                    it.copy(urlStates = loadedUrls)
+                    _state.update {
+                        val url = throwable.url
+                        val loadedUrls = it.urlStates.toMutableMap().apply { put(url, LoadState.FAIL) }
+                        val imageErrors = it.imageErrors.toMutableMap().apply { put(url, MainScreenState.ImageError(errorMessage, canBeLoad)) }
+                        it.copy(urlStates = loadedUrls, imageErrors = imageErrors)
+                    }
                 }
-            } else {
-                Log.e("Error", throwable.message.toString())
-
-                viewModelScope.launch (handler) {
-                    Toast.makeText(application, throwable.message.toString(), Toast.LENGTH_LONG).show()
+                else -> {
+                    Log.e("Error", throwable.toString())
+                    viewModelScope.launch (handler) {
+                        Toast.makeText(application, throwable.message.toString(), Toast.LENGTH_LONG).show()
+                    }
                 }
             }
         }
@@ -91,6 +118,8 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
         inetAvailable = true,
         screenRange = IntRange(0, 0),
         preloadRange = IntRange(0, 0),
+        showImageFailDialog = None,
+        imageErrors = hashMapOf()
         ))
     val state: StateFlow<MainScreenState> = _state.asStateFlow()
 
@@ -255,6 +284,18 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
                     tryLoadImage(url)
                 }
             }
+            is ShowImageFailDialog ->  _state.update {  it.copy(showImageFailDialog = Option(event.url)) }
+            is DismissImageFailDialog -> _state.update {  it.copy(showImageFailDialog = None) }
+            is LoadImageAgain -> {
+                _state.update {  it.copy(showImageFailDialog = None) }
+                loadImageAgain(event)
+            }
+        }
+    }
+
+    private fun loadImageAgain(event: LoadImageAgain) {
+        viewModelScope.launch(imageExceptionHandler + imageCacheDispatcher) {
+            loadImage(event.url)
         }
     }
 

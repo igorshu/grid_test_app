@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Grid App</string>
     <string name="error">Ошибка</string>
+    <string name="load_again">Загрузить снова</string>
+    <string name="loading_error">Ошибка загрузки</string>
+    <string name="not_valid_url">Не валидный урл</string>
 </resources>

@@ -16,8 +16,11 @@ data class ImageScreenEvent(val url: String) : AppEvent()
 // События основного экрана
 
 sealed class MainEvent
-class ChangeVisibleIndexes(val indexesOnScreen: HashSet<Int>, val index: Int?) : MainEvent()
-class UpdateImageWidthEvent(val width: Int) : MainEvent()
+data class ChangeVisibleIndexes(val indexesOnScreen: HashSet<Int>, val index: Int?) : MainEvent()
+data class UpdateImageWidthEvent(val width: Int) : MainEvent()
+data class ShowImageFailDialog(val url: String) : MainEvent()
+data object DismissImageFailDialog : MainEvent()
+data class LoadImageAgain(val url: String) : MainEvent()
 
 // События экрана с картинкой
 

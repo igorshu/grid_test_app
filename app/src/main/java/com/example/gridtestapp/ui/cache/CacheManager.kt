@@ -16,6 +16,7 @@ import okhttp3.Response
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.security.SecureRandom
 import java.security.cert.CertificateException
@@ -60,7 +61,7 @@ object CacheManager: KoinComponent {
     suspend fun loadImage(url: String): Boolean {
         return suspendCancellableCoroutine { cont ->
             if (!URLUtil.isValidUrl(url)) {
-                cont.resumeWithException(ImageLoadException(url, "Не валидный урл"))
+                cont.resumeWithException(ImageLoadException(url, "Не валидный урл", validUrl = false))
                 return@suspendCancellableCoroutine
             }
 
@@ -72,7 +73,10 @@ object CacheManager: KoinComponent {
 
             val response: Response = okHttpClient.newCall(request).execute()
             if (!response.isSuccessful) {
-                cont.resumeWithException(ImageLoadException(url, "code=${response.code} and message=${response.message}"))
+                val errorMessage = response.message.ifEmpty {
+                    "Ошибка ${response.code}"
+                }
+                cont.resumeWithException(ImageLoadException(url, errorMessage, validUrl = true))
                 return@suspendCancellableCoroutine
             }
 
@@ -82,8 +86,10 @@ object CacheManager: KoinComponent {
             try {
                 saveOriginalImage(url, bitmap)
                 savePreviewImage(url, bitmap)
+            } catch (exception: FileNotFoundException) {
+                cont.resumeWithException(ImageLoadException(url, validUrl = true, exception))
             } catch (throwable: Throwable) {
-                cont.resumeWithException(throwable)
+                cont.resumeWithException(ImageLoadException(url, validUrl = true, throwable))
                 return@suspendCancellableCoroutine
             }
 

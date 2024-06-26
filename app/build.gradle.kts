@@ -80,6 +80,8 @@ dependencies {
     implementation("androidx.compose.foundation:foundation:1.6.7")
     implementation("androidx.core:core-splashscreen:1.0.0")
 
+    implementation("io.arrow-kt:arrow-core:1.2.4")
+
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
