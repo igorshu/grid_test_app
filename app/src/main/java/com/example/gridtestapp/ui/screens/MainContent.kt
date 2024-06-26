@@ -52,7 +52,6 @@ import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.androidx.compose.get
-import java.net.URLEncoder
 
 /*
 *
@@ -78,7 +77,11 @@ fun MainContent(mainState: StateFlow<MainScreenState>, onEvent: OnMainEvent) {
         } else {
             ImageGrid(state.value,
                 onEvent = onEvent
-            ) { url -> routes.navigate(Routes.IMAGE.replace("{url}", URLEncoder.encode(url, "UTF-8"))) }
+            ) { url ->
+                if (!routes.isImage()) {
+                    routes.navigate(Routes.imageRoute(url))
+                }
+            }
         }
     }
 }

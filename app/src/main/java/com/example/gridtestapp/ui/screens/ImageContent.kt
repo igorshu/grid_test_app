@@ -79,7 +79,6 @@ fun ImageContent(
                 exitScale = 0.6f,
                 onExit = routes::goBack
             )
-            println("zoomState.scale = ${zoomState.scale}")
 
             Image(
                 painter = painter,

@@ -24,6 +24,5 @@ class App: Application(), KoinComponent {
                 AppViewModel.module,
             )
         }
-
     }
 }

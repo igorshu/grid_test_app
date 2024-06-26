@@ -5,6 +5,7 @@ import com.example.gridtestapp.logic.events.ImageScreenEvent
 import com.example.gridtestapp.logic.events.MainScreenEvent
 import com.example.gridtestapp.logic.events.OnAppBarEvent
 import org.koin.dsl.module
+import java.net.URLEncoder
 
 /**
  *
@@ -38,9 +39,16 @@ class Routes() {
         navController.navigateUp()
     }
 
+    fun isImage() = IMAGE == navController.currentDestination?.route
+
     companion object {
+
         const val MAIN = "main"
         const val IMAGE = "image/{url}"
+
+        fun imageRoute(url: String): String {
+            return IMAGE.replace("{url}", URLEncoder.encode(url, "UTF-8"))
+        }
 
         val module = module {
             single { Routes() }
