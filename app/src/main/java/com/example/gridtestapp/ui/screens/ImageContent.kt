@@ -97,7 +97,8 @@ fun ImageContent(
             )
         } else {
             Box(
-                modifier = Modifier.aspectRatio(1.0f)
+                modifier = Modifier.aspectRatio(1.0f),
+                contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
             }
