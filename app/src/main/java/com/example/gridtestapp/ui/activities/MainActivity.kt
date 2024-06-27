@@ -23,7 +23,6 @@ import com.example.gridtestapp.ui.screens.MainContent
 import com.example.gridtestapp.ui.theme.GridTestAppTheme
 import org.koin.androidx.compose.get
 
-@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,7 +40,7 @@ class MainActivity : ComponentActivity() {
                 routes.setController(navController, appViewModel::onEvent)
 
                 Scaffold(
-                    topBar = { TopBar(topBarState, routes, appViewModel) }
+                    topBar = { TopBar(topBarState, routes, appViewModel::onEvent) }
                 ) { paddingValues ->
                     NavHost(
                         modifier = Modifier.padding(paddingValues),

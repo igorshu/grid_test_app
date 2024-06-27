@@ -13,10 +13,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.ui.graphics.Color
+import com.example.gridtestapp.logic.events.OnAppBarEvent
 import com.example.gridtestapp.logic.events.SharePressed
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.Screen
-import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.ui.navigation.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,7 +24,7 @@ import com.example.gridtestapp.ui.navigation.Routes
 fun TopBar(
     appState: State<AppState>,
     routes: Routes,
-    appViewModel: AppViewModel
+    onEvent: OnAppBarEvent
 ) {
     if (appState.value.showTopBar) {
         TopAppBar(
@@ -46,7 +46,7 @@ fun TopBar(
             },
             actions = {
                 if (appState.value.currentScreen == Screen.IMAGE) {
-                    IconButton(onClick = { appViewModel.onEvent(SharePressed) }) {
+                    IconButton(onClick = { onEvent(SharePressed) }) {
                         Icon(
                             imageVector = Icons.Filled.Share,
                             contentDescription = "Share",
