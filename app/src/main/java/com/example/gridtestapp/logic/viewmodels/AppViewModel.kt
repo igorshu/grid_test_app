@@ -40,12 +40,14 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is MainScreenEvent -> _state.update {
                 it.copy(
                     showTopBar = true,
+                    showSystemBars = true,
                     title = appName,
                     showBack = false,
                     currentScreen = Screen.MAIN)
             }
             is ImageScreenEvent -> _state.update {
                 it.copy(showTopBar = true,
+                    showSystemBars = true,
                     title = event.url,
                     shareUrl = event.url,
                     showBack = true,
