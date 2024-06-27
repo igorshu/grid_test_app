@@ -17,6 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 import com.example.gridtestapp.logic.events.OnImageEvent
 import com.example.gridtestapp.logic.events.OnAppBarEvent
@@ -62,8 +64,8 @@ fun ImageContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(
-                top = top - paddingValues.calculateTopPadding(),
-                bottom = bottom - paddingValues.calculateBottomPadding(),
+                top = max(top - paddingValues.calculateTopPadding(), 0.dp),
+                bottom = max(bottom - paddingValues.calculateBottomPadding(), 0.dp),
             )
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
