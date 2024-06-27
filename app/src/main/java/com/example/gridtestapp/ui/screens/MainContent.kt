@@ -181,7 +181,7 @@ private fun ImageFailDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 10.dp),
+                    .padding(vertical = 15.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -191,15 +191,17 @@ private fun ImageFailDialog(
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(imageError.errorMessage)
                 Spacer(modifier = Modifier.height(5.dp))
+                if (imageError.canBeLoad) {
+                    Button(
+                        modifier = Modifier.padding(top = 15.dp),
+                        onClick = { onEvent(LoadImageAgain(url)) }
+                    ) {
+                        Text(stringResource(id = R.string.load_again))
+                    }
+                }
                 Button(
                     modifier = Modifier.padding(top = 15.dp),
-                    onClick = {
-                        if (imageError.canBeLoad) {
-                            onEvent(LoadImageAgain(url))
-                        } else {
-                            onEvent(DismissImageFailDialog)
-                        }
-                    }
+                    onClick = { onEvent(DismissImageFailDialog) }
                 ) {
                     Text(stringResource(id = R.string.ok))
                 }
