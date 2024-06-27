@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
@@ -35,12 +34,12 @@ class MainActivity : ComponentActivity() {
                 val routes = get<Routes>()
                 val appViewModel = get<AppViewModel>()
 
-                val topBarState = appViewModel.state.collectAsState()
+                val appState = appViewModel.state.collectAsState()
 
                 routes.setController(navController, appViewModel::onEvent)
 
                 Scaffold(
-                    topBar = { TopBar(topBarState, routes, appViewModel::onEvent) }
+                    topBar = { TopBar(appState, routes, appViewModel::onEvent) },
                 ) { paddingValues ->
                     NavHost(
                         modifier = Modifier.padding(paddingValues),

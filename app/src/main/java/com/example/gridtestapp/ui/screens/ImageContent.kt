@@ -17,11 +17,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-import com.example.gridtestapp.logic.events.OnImageEvent
 import com.example.gridtestapp.logic.events.OnAppBarEvent
+import com.example.gridtestapp.logic.events.OnImageEvent
 import com.example.gridtestapp.logic.events.ToggleFullScreen
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.ImageScreenState
@@ -49,12 +50,11 @@ fun ImageContent(
 
     val imageState = imageStateFlow.collectAsState()
     val appState = appStateFlow.collectAsState()
-    val top = remember {
-        paddingValues.calculateTopPadding()
-    }
-    val bottom = remember {
-        paddingValues.calculateBottomPadding()
-    }
+
+    val left = remember { paddingValues.calculateLeftPadding(LayoutDirection.Ltr) }
+    val top = remember { paddingValues.calculateTopPadding() }
+    val right = remember { paddingValues.calculateRightPadding(LayoutDirection.Ltr) }
+    val bottom = remember { paddingValues.calculateBottomPadding() }
 
     val systemUiController: SystemUiController = rememberSystemUiController()
     systemUiController.systemBarsBehavior = BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -64,7 +64,9 @@ fun ImageContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(
+                start = max(left - paddingValues.calculateLeftPadding(LayoutDirection.Ltr), 0.dp),
                 top = max(top - paddingValues.calculateTopPadding(), 0.dp),
+                end = max(right - paddingValues.calculateRightPadding(LayoutDirection.Ltr), 0.dp),
                 bottom = max(bottom - paddingValues.calculateBottomPadding(), 0.dp),
             )
             .background(MaterialTheme.colorScheme.background),

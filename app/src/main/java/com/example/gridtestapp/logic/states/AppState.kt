@@ -1,8 +1,5 @@
 package com.example.gridtestapp.logic.states
 
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
-
 enum class Screen {
     MAIN, IMAGE
 }
