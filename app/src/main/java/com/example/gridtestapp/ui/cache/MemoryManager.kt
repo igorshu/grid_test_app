@@ -25,5 +25,7 @@ object MemoryManager {
         previews.remove(url)
     }
 
+    fun exists(url: String) = getBitmap(url) != null
+
 
 }

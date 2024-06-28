@@ -77,11 +77,13 @@ object CacheManager: KoinComponent {
                     "Ошибка ${response.code}"
                 }
                 cont.resumeWithException(ImageLoadException(url, errorMessage, validUrl = true))
+                response.close()
                 return@suspendCancellableCoroutine
             }
 
             val inputStream = response.body!!.byteStream()
             val bitmap = BitmapFactory.decodeStream(inputStream)
+            response.close()
 
             try {
                 saveOriginalImage(url, bitmap)

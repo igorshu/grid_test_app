@@ -24,3 +24,4 @@ data class LoadImageAgain(val url: String) : MainEvent()
 // События экрана с картинкой
 
 sealed class ImageEvent
+data class LoadOriginalImageFromDisk(val url: String, val index: Int): ImageEvent()

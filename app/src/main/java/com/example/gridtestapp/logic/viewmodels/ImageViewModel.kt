@@ -1,12 +1,19 @@
 package com.example.gridtestapp.logic.viewmodels
 
 import android.app.Application
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gridtestapp.logic.events.ImageEvent
+import com.example.gridtestapp.core.Settings
+import com.example.gridtestapp.logic.coroutines.ImageLoadFail
+import com.example.gridtestapp.logic.coroutines.UnknownFail
+import com.example.gridtestapp.logic.coroutines.imageExceptionHandler
+import com.example.gridtestapp.logic.coroutines.showError
+import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
+import com.example.gridtestapp.logic.events.OnImageEvent
 import com.example.gridtestapp.logic.states.ImageScreenState
 import com.example.gridtestapp.ui.cache.CacheManager
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,25 +25,53 @@ import kotlinx.coroutines.launch
 *   Вью модель для экрана с картинкой
 *
 */
-class ImageViewModel(private val application: Application, val url: String): AndroidViewModel(application) {
+class ImageViewModel(
+    private val urls: List<String>,
+    private val application: Application,
+    initial: Pair<Int, String>
+): AndroidViewModel(application) {
 
-    private val _state: MutableStateFlow<ImageScreenState> = MutableStateFlow(ImageScreenState(
-        imageLoaded = false,
-        null,
-    ))
+    private val handler = CoroutineExceptionHandler { _, exception -> showError(application, viewModelScope, exception)}
+
+    private val _state: MutableStateFlow<ImageScreenState> = MutableStateFlow(ImageScreenState.init(initialIndex = initial.first))
     val state: StateFlow<ImageScreenState> = _state.asStateFlow()
 
+    private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad -> }
+    private val unknownFail: UnknownFail = { throwable ->
+        viewModelScope.launch (handler) {
+            Toast.makeText(application, throwable.message.toString(), Toast.LENGTH_LONG).show()
+        }
+    }
+    private val _imageExceptionHandler = imageExceptionHandler(imageLoadFail, unknownFail)
+
     init {
-        loadOriginalImage(url)
+        loadOriginalImageFromDisk(initial.first, initial.second)
     }
 
-    fun onEvent(event: ImageEvent) { }
+    val onEvent: OnImageEvent = { event ->
+        when (event) {
+            is LoadOriginalImageFromDisk -> {
+                loadOriginalImageFromDisk(event.index, event.url)
+            }
+        }
+    }
 
-    private fun loadOriginalImage(url: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val bitmap = CacheManager.originalImageBitmap(url)
-            _state.update {
-                it.copy(image = bitmap)
+    private fun loadOriginalImageFromDisk(index: Int, url: String) {
+        viewModelScope.launch(handler) {
+            if (CacheManager.isCached(url)) {
+                val bitmap = CacheManager.originalImageBitmap(url)
+                _state.update {
+                    val originalImages = it.originalImages.toMutableMap()
+                    originalImages[url] = bitmap
+
+                    urls.filterIndexed() { i, url ->
+                        i < index - Settings.originalPreloadOffset && i > index + Settings.originalPreloadOffset
+                    }.forEach { url ->
+                        originalImages[url] = null
+                    }
+
+                    it.copy(originalImages = originalImages)
+                }
             }
         }
     }

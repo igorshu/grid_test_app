@@ -3,34 +3,40 @@ package com.example.gridtestapp.logic.viewmodels
 import android.app.Application
 import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.gridtestapp.core.ConnectionManager
+import com.example.gridtestapp.logic.coroutines.showError
+import com.example.gridtestapp.logic.events.AppEvent
 import com.example.gridtestapp.logic.events.ImageScreenEvent
 import com.example.gridtestapp.logic.events.MainScreenEvent
-import com.example.gridtestapp.logic.events.AppEvent
 import com.example.gridtestapp.logic.events.SharePressed
 import com.example.gridtestapp.logic.events.ToggleFullScreen
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.Screen
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.dsl.module
 
-class AppViewModel(private val application: Application): AndroidViewModel(application),
-    KoinComponent {
+class AppViewModel(private val application: Application): AndroidViewModel(application), KoinComponent {
+
+    private val handler = CoroutineExceptionHandler { _, exception -> showError(application, viewModelScope, exception) }
 
     private val appName = application.getString(application.applicationInfo.labelRes)
 
-    private val _state: MutableStateFlow<AppState> = MutableStateFlow(AppState(
-        showBack = false,
-        showTopBar = true,
-        showSystemBars = true,
-        title = appName,
-        currentScreen = Screen.MAIN,
-        shareUrl = null
-        ))
+    val _state: MutableStateFlow<AppState> = MutableStateFlow(AppState.init(appName))
     val state: StateFlow<AppState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch(handler + Dispatchers.IO) {
+            ConnectionManager.init(application)
+        }
+    }
 
     fun onEvent(event: AppEvent) {
         when (event) {

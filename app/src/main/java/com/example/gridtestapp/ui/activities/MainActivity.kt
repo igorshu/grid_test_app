@@ -34,10 +34,9 @@ class MainActivity : ComponentActivity() {
                 val routes = get<Routes>()
                 val appViewModel = get<AppViewModel>()
 
-                val appState = appViewModel.state.collectAsState()
-
                 routes.setController(navController, appViewModel::onEvent)
 
+                val appState = appViewModel.state.collectAsState()
                 Scaffold(
                     topBar = { TopBar(appState, routes, appViewModel::onEvent) },
                 ) { paddingValues ->
@@ -48,17 +47,22 @@ class MainActivity : ComponentActivity() {
                     ) {
                         composable(Routes.MAIN) {
                             val mainViewModel = get<MainViewModel>()
-                            MainContent(mainState = mainViewModel.state, onEvent = mainViewModel::onEvent)
+                            MainContent(mainState = mainViewModel.state, onMainEvent = mainViewModel::onEvent)
                         }
                         composable(Routes.IMAGE) { backStackEntry ->
+                            val mainViewModel = get<MainViewModel>()
+
                             val url = backStackEntry.arguments?.getString("url")
+                            val index = backStackEntry.arguments?.getString("index")!!.toInt()
                             val imageViewModel = remember {
-                                ImageViewModel(application, url!!)
+                                val urls = mainViewModel.state.value.urls
+                                ImageViewModel(urls, application, index to (url!!))
                             }
                             ImageContent(
                                 imageViewModel.state,
                                 appViewModel.state,
-                                imageViewModel::onEvent,
+                                mainViewModel.state,
+                                imageViewModel.onEvent,
                                 appViewModel::onEvent,
                                 routes,
                                 paddingValues)

@@ -44,6 +44,7 @@ import com.example.gridtestapp.logic.events.DismissImageFailDialog
 import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.OnMainEvent
 import com.example.gridtestapp.logic.events.ShowImageFailDialog
+import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.MainScreenState
 import com.example.gridtestapp.ui.cache.MemoryManager
@@ -60,7 +61,7 @@ import org.koin.androidx.compose.get
 *
 */
 @Composable
-fun MainContent(mainState: StateFlow<MainScreenState>, onEvent: OnMainEvent) {
+fun MainContent(mainState: StateFlow<MainScreenState>, onMainEvent: OnMainEvent) {
 
     val state = mainState.collectAsState()
     val routes = get<Routes>()
@@ -77,10 +78,10 @@ fun MainContent(mainState: StateFlow<MainScreenState>, onEvent: OnMainEvent) {
             Loader()
         } else {
             ImageGrid(state.value,
-                onEvent = onEvent
-            ) { url ->
+                onEvent = onMainEvent
+            ) { url, index ->
                 if (!routes.isImage()) {
-                    routes.navigate(Routes.imageRoute(url))
+                    routes.navigate(Routes.imageRoute(url, index))
                 }
             }
         }
@@ -89,7 +90,7 @@ fun MainContent(mainState: StateFlow<MainScreenState>, onEvent: OnMainEvent) {
 
 
 @Composable
-fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url: String) -> Unit) {
+fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url: String, index: Int) -> Unit) {
 
     val indexesOnScreen = remember {
         hashSetOf<Int>()
@@ -126,7 +127,7 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
                                 .aspectRatio(1.0f)
                                 .padding(2.dp)
                                 .clickable(onClick = {
-                                    toImageScreen(url)
+                                    toImageScreen(url, index)
                                 })
                                 .onWidthChanged(state, onEvent),
                         )

@@ -44,10 +44,12 @@ class Routes() {
     companion object {
 
         const val MAIN = "main"
-        const val IMAGE = "image/{url}"
+        const val IMAGE = "image/{index}/{url}"
 
-        fun imageRoute(url: String): String {
-            return IMAGE.replace("{url}", URLEncoder.encode(url, "UTF-8"))
+        fun imageRoute(url: String, index: Int): String {
+            return IMAGE
+                .replace("{url}", URLEncoder.encode(url, "UTF-8"))
+                .replace("{index}", index.toString())
         }
 
         val module = module {
