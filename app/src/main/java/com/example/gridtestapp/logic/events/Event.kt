@@ -4,22 +4,23 @@ package com.example.gridtestapp.logic.events
  *  Классы событий
  */
 
-// События топ бара
+// События приложения
 
 sealed class AppEvent
 data object ToggleFullScreen : AppEvent()
 data object SharePressed : AppEvent()
 data object MainScreenEvent : AppEvent()
 data class ImageScreenEvent(val url: String) : AppEvent()
+data class ShowImageFailDialog(val url: String) : AppEvent()
+data object DismissImageFailDialog : AppEvent()
+data class LoadImageAgain(val url: String) : AppEvent()
+data class ChangeVisibleIndexes(val indexesOnScreen: HashSet<Int>, val index: Int?) : AppEvent()
+
 
 // События основного экрана
 
 sealed class MainEvent
-data class ChangeVisibleIndexes(val indexesOnScreen: HashSet<Int>, val index: Int?) : MainEvent()
 data class UpdateImageWidthEvent(val width: Int) : MainEvent()
-data class ShowImageFailDialog(val url: String) : MainEvent()
-data object DismissImageFailDialog : MainEvent()
-data class LoadImageAgain(val url: String) : MainEvent()
 
 // События экрана с картинкой
 

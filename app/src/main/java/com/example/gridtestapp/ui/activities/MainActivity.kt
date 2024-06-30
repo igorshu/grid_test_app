@@ -34,11 +34,12 @@ class MainActivity : ComponentActivity() {
                 val routes = get<Routes>()
                 val appViewModel = get<AppViewModel>()
 
-                routes.setController(navController, appViewModel::onEvent)
+                routes.setController(navController, appViewModel.onEvent)
 
                 val appState = appViewModel.state.collectAsState()
+
                 Scaffold(
-                    topBar = { TopBar(appState, routes, appViewModel::onEvent) },
+                    topBar = { TopBar(appState.value, routes, appViewModel.onEvent) },
                 ) { paddingValues ->
                     NavHost(
                         modifier = Modifier.padding(paddingValues),
@@ -47,7 +48,13 @@ class MainActivity : ComponentActivity() {
                     ) {
                         composable(Routes.MAIN) {
                             val mainViewModel = get<MainViewModel>()
-                            MainContent(mainState = mainViewModel.state, onMainEvent = mainViewModel::onEvent)
+                            val mainState = mainViewModel.state.collectAsState()
+                            MainContent(
+                                mainState = mainState.value,
+                                appState = appState.value,
+                                onMainEvent = mainViewModel.onEvent,
+                                onAppEvent = appViewModel.onEvent,
+                                )
                         }
                         composable(Routes.IMAGE) { backStackEntry ->
                             val mainViewModel = get<MainViewModel>()
@@ -55,7 +62,7 @@ class MainActivity : ComponentActivity() {
                             val url = backStackEntry.arguments?.getString("url")
                             val index = backStackEntry.arguments?.getString("index")!!.toInt()
                             val imageViewModel = remember {
-                                val urls = mainViewModel.state.value.urls
+                                val urls = appState.value.urls
                                 ImageViewModel(urls, application, index to (url!!))
                             }
                             ImageContent(
@@ -63,7 +70,7 @@ class MainActivity : ComponentActivity() {
                                 appViewModel.state,
                                 mainViewModel.state,
                                 imageViewModel.onEvent,
-                                appViewModel::onEvent,
+                                appViewModel.onEvent,
                                 routes,
                                 paddingValues)
                         }

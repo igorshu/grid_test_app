@@ -3,7 +3,7 @@ package com.example.gridtestapp.ui.navigation
 import androidx.navigation.NavHostController
 import com.example.gridtestapp.logic.events.ImageScreenEvent
 import com.example.gridtestapp.logic.events.MainScreenEvent
-import com.example.gridtestapp.logic.events.OnAppBarEvent
+import com.example.gridtestapp.logic.events.OnAppEvent
 import org.koin.dsl.module
 import java.net.URLEncoder
 
@@ -22,15 +22,15 @@ class Routes() {
 
     fun setController(
         navController: NavHostController,
-        onAppBarEvent: OnAppBarEvent
+        onAppEvent: OnAppEvent
     ) {
         this.navController = navController
 
         navController.addOnDestinationChangedListener { _, destination, arguments ->
             if (destination.route == MAIN) {
-                onAppBarEvent(MainScreenEvent)
+                onAppEvent(MainScreenEvent)
             } else if (destination.route == IMAGE) {
-                onAppBarEvent(ImageScreenEvent(url = arguments!!.getString("url")!!))
+                onAppEvent(ImageScreenEvent(url = arguments!!.getString("url")!!))
             }
         }
     }

@@ -71,8 +71,13 @@ object CacheManager: KoinComponent {
 
             val okHttpClient = trustAllImageClient()
 
-            val response: Response = okHttpClient.newCall(request).execute()
-            if (!response.isSuccessful) {
+            val response: Response = try {
+                okHttpClient.newCall(request).execute()
+            } catch (exception: Exception) {
+                cont.resumeWithException(ImageLoadException(url, validUrl = true, exception))
+                return@suspendCancellableCoroutine
+            }
+                if (!response.isSuccessful) {
                 val errorMessage = response.message.ifEmpty {
                     "Ошибка ${response.code}"
                 }
@@ -90,6 +95,7 @@ object CacheManager: KoinComponent {
                 savePreviewImage(url, bitmap)
             } catch (exception: FileNotFoundException) {
                 cont.resumeWithException(ImageLoadException(url, validUrl = true, exception))
+                return@suspendCancellableCoroutine
             } catch (throwable: Throwable) {
                 cont.resumeWithException(ImageLoadException(url, validUrl = true, throwable))
                 return@suspendCancellableCoroutine

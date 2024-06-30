@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
-import com.example.gridtestapp.logic.events.OnAppBarEvent
+import com.example.gridtestapp.logic.events.OnAppEvent
 import com.example.gridtestapp.logic.events.OnImageEvent
 import com.example.gridtestapp.logic.events.ToggleFullScreen
 import com.example.gridtestapp.logic.states.AppState
@@ -51,7 +51,7 @@ fun ImageContent(
     appStateFlow: StateFlow<AppState>,
     mainStateFlow: StateFlow<MainScreenState>,
     onEvent: OnImageEvent,
-    onAppBarEvent: OnAppBarEvent,
+    onAppEvent: OnAppEvent,
     routes: Routes,
     paddingValues: PaddingValues,
 ) {
@@ -83,10 +83,10 @@ fun ImageContent(
     ) {
         val pagerState = rememberPagerState(
             initialPage = imageState.value.index,
-            pageCount = { mainState.value.urlStates.size }
+            pageCount = { appState.value.urls.size }
         )
         HorizontalPager(state = pagerState) { index ->
-            val url = mainState.value.urls[index]
+            val url = appState.value.urls[index]
 
             val originalImage = imageState.value.originalImages[url]
             if (originalImage != null) {
@@ -108,7 +108,7 @@ fun ImageContent(
                             interactionSource,
                             indication = null,
                         ) {
-                            onAppBarEvent(ToggleFullScreen)
+                            onAppEvent(ToggleFullScreen)
                         }
                         .zoomable(zoomState)
                 )

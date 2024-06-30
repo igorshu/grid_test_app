@@ -7,10 +7,9 @@ import com.example.gridtestapp.logic.events.OnMainEvent
 import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
 import com.example.gridtestapp.logic.states.MainScreenState
 
-fun Modifier.onWidthChanged(state: MainScreenState, onEvent: OnMainEvent): Modifier =
+fun Modifier.onWidthChanged(mainState: MainScreenState, onEvent: OnMainEvent): Modifier =
     this.onGloballyPositioned { coordinates ->
-        if (!state.widthConsumed) {
-//            Log.d("onEvent", "UpdateImageWidthEvent")
+        if (!mainState.widthConsumed) {
             onEvent(UpdateImageWidthEvent(coordinates.size.width))
         }
     }

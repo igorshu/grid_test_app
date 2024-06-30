@@ -25,15 +25,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -42,6 +39,7 @@ import com.example.gridtestapp.R
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
 import com.example.gridtestapp.logic.events.LoadImageAgain
+import com.example.gridtestapp.logic.events.OnAppEvent
 import com.example.gridtestapp.logic.events.OnMainEvent
 import com.example.gridtestapp.logic.events.ShowImageFailDialog
 import com.example.gridtestapp.logic.states.AppState
@@ -52,7 +50,6 @@ import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.other.onWidthChanged
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import kotlinx.coroutines.flow.StateFlow
 import org.koin.androidx.compose.get
 
 /*
@@ -61,9 +58,13 @@ import org.koin.androidx.compose.get
 *
 */
 @Composable
-fun MainContent(mainState: StateFlow<MainScreenState>, onMainEvent: OnMainEvent) {
+fun MainContent(
+    mainState: MainScreenState,
+    appState: AppState,
+    onMainEvent: OnMainEvent,
+    onAppEvent: OnAppEvent,
+) {
 
-    val state = mainState.collectAsState()
     val routes = get<Routes>()
 
     val systemUiController: SystemUiController = rememberSystemUiController()
@@ -74,11 +75,14 @@ fun MainContent(mainState: StateFlow<MainScreenState>, onMainEvent: OnMainEvent)
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        if (state.value.urls.isEmpty()) {
+        if (appState.urls.isEmpty()) {
             Loader()
         } else {
-            ImageGrid(state.value,
-                onEvent = onMainEvent
+            ImageGrid(
+                mainState = mainState,
+                appState = appState,
+                onMainEvent = onMainEvent,
+                onAppEvent = onAppEvent,
             ) { url, index ->
                 if (!routes.isImage()) {
                     routes.navigate(Routes.imageRoute(url, index))
@@ -90,7 +94,11 @@ fun MainContent(mainState: StateFlow<MainScreenState>, onMainEvent: OnMainEvent)
 
 
 @Composable
-fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url: String, index: Int) -> Unit) {
+fun ImageGrid(mainState: MainScreenState,
+              appState: AppState,
+              onMainEvent: OnMainEvent,
+              onAppEvent: OnAppEvent,
+              toImageScreen: (url: String, index: Int) -> Unit) {
 
     val indexesOnScreen = remember {
         hashSetOf<Int>()
@@ -100,22 +108,22 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
         modifier = Modifier.fillMaxSize(),
         columns = GridCells.Adaptive(100.dp),
     ) {
-        itemsIndexed(state.urls.toList(),
+        itemsIndexed(appState.urls.toList(),
             key = { _, url -> url }
         ) { index, url ->
 
             LaunchedEffect(index) {
                 indexesOnScreen.add(index)
-                onEvent(ChangeVisibleIndexes(indexesOnScreen, index))
+                onAppEvent(ChangeVisibleIndexes(indexesOnScreen, index))
             }
             DisposableEffect(index) {
                 onDispose {
                     indexesOnScreen.remove(index)
-                    onEvent(ChangeVisibleIndexes(indexesOnScreen, null))
+                    onAppEvent(ChangeVisibleIndexes(indexesOnScreen, null))
                 }
             }
 
-            when (state.urlStates[url]) {
+            when (appState.urlStates[url]) {
                 LoadState.LOADED -> {
                     val imageBitmap = MemoryManager.getBitmap(url)
                     if (imageBitmap != null) {
@@ -129,20 +137,20 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
                                 .clickable(onClick = {
                                     toImageScreen(url, index)
                                 })
-                                .onWidthChanged(state, onEvent),
+                                .onWidthChanged(mainState, onMainEvent),
                         )
                     } else {
                         Box(modifier = Modifier.aspectRatio(1.0f)) {}
                     }
                 }
                 LoadState.LOADING -> {
-                    ImageLoader(state, onEvent)
+                    ImageLoader(mainState, onMainEvent)
                 }
                 LoadState.FAIL -> {
                     Box(
                         modifier = Modifier
                             .aspectRatio(1.0f)
-                            .clickable { onEvent(ShowImageFailDialog(url)) }
+                            .clickable { onAppEvent(ShowImageFailDialog(url)) }
                         ,
                         contentAlignment = Alignment.Center,
                     ) {
@@ -150,15 +158,15 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
                     }
                 }
                 LoadState.IDLE -> {
-                    ImageLoader(state, onEvent)
+                    ImageLoader(mainState, onMainEvent)
                 }
                 else -> {}
             }
 
-            if (state.showImageFailDialog.isSome { it == url }) {
-                val imageError = state.imageErrors[url]
+            if (appState.showImageFailDialog.isSome { it == url }) {
+                val imageError = appState.imageErrors[url]
                 imageError?.let {
-                    ImageFailDialog(onEvent, imageError, url)
+                    ImageFailDialog(onAppEvent, imageError, url)
                 }
             }
         }
@@ -168,11 +176,11 @@ fun ImageGrid(state: MainScreenState, onEvent: OnMainEvent, toImageScreen: (url:
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun ImageFailDialog(
-    onEvent: OnMainEvent,
+    onAppEvent: OnAppEvent,
     imageError: MainScreenState.ImageError,
     url: String
 ) {
-    AlertDialog(onDismissRequest = { onEvent(DismissImageFailDialog) }) {
+    AlertDialog(onDismissRequest = { onAppEvent(DismissImageFailDialog) }) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -182,7 +190,7 @@ private fun ImageFailDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 15.dp),
+                    .padding(vertical = 15.dp, horizontal = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -195,14 +203,14 @@ private fun ImageFailDialog(
                 if (imageError.canBeLoad) {
                     Button(
                         modifier = Modifier.padding(top = 15.dp),
-                        onClick = { onEvent(LoadImageAgain(url)) }
+                        onClick = { onAppEvent(LoadImageAgain(url)) }
                     ) {
                         Text(stringResource(id = R.string.load_again))
                     }
                 }
                 Button(
                     modifier = Modifier.padding(top = 15.dp),
-                    onClick = { onEvent(DismissImageFailDialog) }
+                    onClick = { onAppEvent(DismissImageFailDialog) }
                 ) {
                     Text(stringResource(id = R.string.ok))
                 }

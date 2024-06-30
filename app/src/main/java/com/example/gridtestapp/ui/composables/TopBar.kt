@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.LayoutDirection
-import com.example.gridtestapp.logic.events.OnAppBarEvent
+import com.example.gridtestapp.logic.events.OnAppEvent
 import com.example.gridtestapp.logic.events.SharePressed
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.Screen
@@ -27,14 +27,14 @@ import com.example.gridtestapp.ui.navigation.Routes
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(
-    appState: State<AppState>,
+    appState: AppState,
     routes: Routes,
-    onEvent: OnAppBarEvent,
+    onEvent: OnAppEvent,
 ) {
     val initialTop = TopAppBarDefaults.windowInsets.getTop(LocalDensity.current)
     val top = remember { initialTop}
 
-    if (appState.value.showTopBar) {
+    if (appState.showTopBar) {
 
         val insets = WindowInsets(
             left = TopAppBarDefaults.windowInsets.getLeft(LocalDensity.current, LayoutDirection.Ltr),
@@ -51,9 +51,9 @@ fun TopBar(
                 titleContentColor = Color.White,
                 containerColor = MaterialTheme.colorScheme.tertiary,
             ),
-            title = { Text(appState.value.title, maxLines = 1) },
+            title = { Text(appState.title, maxLines = 1) },
             navigationIcon = {
-                if (appState.value.showBack) {
+                if (appState.showBack) {
                     IconButton(onClick = { routes.goBack() }) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,
@@ -63,7 +63,7 @@ fun TopBar(
                 }
             },
             actions = {
-                if (appState.value.currentScreen == Screen.IMAGE) {
+                if (appState.currentScreen == Screen.IMAGE) {
                     IconButton(onClick = { onEvent(SharePressed) }) {
                         Icon(
                             imageVector = Icons.Filled.Share,
