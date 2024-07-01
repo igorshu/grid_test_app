@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -27,6 +28,7 @@ import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_B
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
 import com.example.gridtestapp.logic.events.OnAppEvent
 import com.example.gridtestapp.logic.events.OnImageEvent
+import com.example.gridtestapp.logic.events.ShowImageNotification
 import com.example.gridtestapp.logic.events.ToggleFullScreen
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.ImageScreenState
@@ -37,6 +39,7 @@ import com.example.gridtestapp.ui.cache.MemoryManager
 import com.example.gridtestapp.ui.navigation.Routes
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import kotlinx.coroutines.flow.collect
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
@@ -51,7 +54,7 @@ fun ImageContent(
     imageState: ImageScreenState,
     appState: AppState,
     mainState: MainScreenState,
-    onEvent: OnImageEvent,
+    onImageEvent: OnImageEvent,
     onAppEvent: OnAppEvent,
     routes: Routes,
     paddingValues: PaddingValues,
@@ -82,12 +85,22 @@ fun ImageContent(
             initialPage = imageState.index,
             pageCount = { appState.urls.size }
         )
+
+        LaunchedEffect(key1 = pagerState) {
+            snapshotFlow { pagerState.settledPage }.collect { page ->
+                val url = appState.urls[page]
+                onImageEvent(ShowImageNotification(url))
+            }
+        }
+
         HorizontalPager(state = pagerState) { index ->
             val url = appState.urls[index]
 
             val urlState = imageState.originalUrlStates[url]
             if (urlState == LOADED) {
-                val originalImage = MemoryManager.getOriginalBitmap(url)
+                val originalImage = remember {
+                    MemoryManager.getOriginalBitmap(url)
+                }
                 val interactionSource = remember { MutableInteractionSource() }
 
                 if (originalImage != null) {
@@ -125,7 +138,7 @@ fun ImageContent(
                     ) {
                         CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
                         LaunchedEffect(key1 = url) {
-                            onEvent(LoadOriginalImageFromDisk(url, index))
+                            onImageEvent(LoadOriginalImageFromDisk(url, index))
                         }
                     }
                 }

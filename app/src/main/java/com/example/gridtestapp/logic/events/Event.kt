@@ -26,3 +26,4 @@ data class UpdateImageWidthEvent(val width: Int) : MainEvent()
 
 sealed class ImageEvent
 data class LoadOriginalImageFromDisk(val url: String, val index: Int): ImageEvent()
+data class ShowImageNotification(val url: String): ImageEvent()

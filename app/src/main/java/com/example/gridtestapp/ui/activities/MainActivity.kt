@@ -1,5 +1,9 @@
 package com.example.gridtestapp.ui.activities
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.NotificationManager.IMPORTANCE_HIGH
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,21 +16,27 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.gridtestapp.core.NotificationService
+import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.logic.viewmodels.ImageViewModel
 import com.example.gridtestapp.logic.viewmodels.MainViewModel
-import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.ui.composables.TopBar
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.screens.ImageContent
 import com.example.gridtestapp.ui.screens.MainContent
 import com.example.gridtestapp.ui.theme.GridTestAppTheme
+import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.get
 
 class MainActivity : ComponentActivity() {
 
+    val notificationService: NotificationService by inject()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        createNotificationChannel()
 
         setContent {
             GridTestAppTheme {
@@ -49,6 +59,7 @@ class MainActivity : ComponentActivity() {
                         composable(Routes.MAIN) {
                             val mainViewModel = get<MainViewModel>()
                             val mainState = mainViewModel.state.collectAsState()
+
                             MainContent(
                                 mainState = mainState.value,
                                 appState = appState.value,
@@ -84,4 +95,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+
+
+    fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationChannel = NotificationChannel(NotificationService.NOTIFICATION_CHANNEL, "Application Notification", IMPORTANCE_HIGH)
+            notificationChannel.description = "description"
+
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(notificationChannel)
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+
+        notificationService.hideNotification(this)
+    }
 }

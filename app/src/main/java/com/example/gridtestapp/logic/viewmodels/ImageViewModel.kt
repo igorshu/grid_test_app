@@ -2,8 +2,10 @@ package com.example.gridtestapp.logic.viewmodels
 
 import android.app.Application
 import android.widget.Toast
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.gridtestapp.core.NotificationService
 import com.example.gridtestapp.core.Settings
 import com.example.gridtestapp.logic.coroutines.ImageLoadFail
 import com.example.gridtestapp.logic.coroutines.UnknownFail
@@ -12,6 +14,7 @@ import com.example.gridtestapp.logic.coroutines.imageExceptionHandler
 import com.example.gridtestapp.logic.coroutines.showError
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
 import com.example.gridtestapp.logic.events.OnImageEvent
+import com.example.gridtestapp.logic.events.ShowImageNotification
 import com.example.gridtestapp.logic.states.ImageScreenState
 import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.ui.cache.CacheManager
@@ -22,6 +25,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 /*
 *
@@ -32,7 +37,9 @@ class ImageViewModel(
     private val urls: List<String>,
     private val application: Application,
     initial: Pair<Int, String>
-): AndroidViewModel(application) {
+): AndroidViewModel(application), KoinComponent {
+
+    private val notificationService: NotificationService by inject()
 
     private val handler = CoroutineExceptionHandler { _, exception -> showError(application, viewModelScope, exception)}
 
@@ -55,6 +62,13 @@ class ImageViewModel(
         when (event) {
             is LoadOriginalImageFromDisk -> {
                 loadOriginalImageFromDisk(event.index, event.url)
+            }
+            is ShowImageNotification -> {
+                viewModelScope.launch(handler) {
+                    val imageBitmap = MemoryManager.getOriginalBitmap(event.url)
+                    notificationService.showImageNotification(application, imageBitmap?.asAndroidBitmap(), event.url)
+                }
+
             }
         }
     }

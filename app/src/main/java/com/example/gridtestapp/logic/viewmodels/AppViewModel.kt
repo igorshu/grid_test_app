@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import arrow.core.None
 import arrow.core.Option
 import com.example.gridtestapp.core.ConnectionManager
+import com.example.gridtestapp.core.NotificationService
 import com.example.gridtestapp.core.Settings
 import com.example.gridtestapp.logic.coroutines.ImageLoadFail
 import com.example.gridtestapp.logic.coroutines.UnknownFail
@@ -48,11 +49,14 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.koin.core.component.KoinComponent
 import org.koin.dsl.module
+import org.koin.core.component.inject
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
 class AppViewModel(private val application: Application): AndroidViewModel(application), KoinComponent {
+
+    private val notificationService: NotificationService by inject()
 
     private var updateOuterPreviewsJob: Job? = null
 
@@ -239,13 +243,19 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is ToggleFullScreen -> _state.update {
                 if (it.currentScreen == Screen.IMAGE) { it.copy(showTopBar = !it.showTopBar, showSystemBars = !it.showSystemBars) } else { it }
             }
-            is MainScreenEvent -> _state.update {
-                it.copy(
-                    showTopBar = true,
-                    showSystemBars = true,
-                    title = appName,
-                    showBack = false,
-                    currentScreen = Screen.MAIN)
+            is MainScreenEvent -> {
+                _state.update {
+                    it.copy(
+                        showTopBar = true,
+                        showSystemBars = true,
+                        title = appName,
+                        showBack = false,
+                        currentScreen = Screen.MAIN
+                    )
+                }
+                viewModelScope.launch(handler) {
+                    notificationService.showAppNotification(application)
+                }
             }
             is ImageScreenEvent -> _state.update {
                 it.copy(showTopBar = true,
