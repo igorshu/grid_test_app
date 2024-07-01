@@ -9,7 +9,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import arrow.core.None
 import arrow.core.Option
-import com.example.gridtestapp.core.ConnectionManager
+import com.example.gridtestapp.core.connection.ConnectionManager
 import com.example.gridtestapp.core.NotificationService
 import com.example.gridtestapp.core.Settings
 import com.example.gridtestapp.logic.coroutines.ImageLoadFail

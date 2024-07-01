@@ -1,4 +1,4 @@
-package com.example.gridtestapp.core
+package com.example.gridtestapp.core.connection
 
 import android.app.Application
 import android.net.ConnectivityManager
@@ -16,9 +16,6 @@ import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
 
-class ConnectionState(val previous: Boolean, val current: Boolean) {
-    override fun toString(): String = "previous = $previous, current = $current"
-}
 object ConnectionManager {
 
     var online: Boolean = true
