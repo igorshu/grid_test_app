@@ -4,6 +4,7 @@ import android.app.Application
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.gridtestapp.core.Settings
 import com.example.gridtestapp.logic.coroutines.ImageLoadFail
 import com.example.gridtestapp.logic.coroutines.UnknownFail
 import com.example.gridtestapp.logic.coroutines.imageCacheDispatcher
@@ -68,11 +69,13 @@ class ImageViewModel(
                     val originalUrlStates = it.originalUrlStates.toMutableMap()
                     originalUrlStates[url] = LoadState.LOADED
 
-//                    urls.filterIndexed() { i, url ->
-//                        i < index - Settings.originalPreloadOffset && i > index + Settings.originalPreloadOffset
-//                    }.forEach { url ->
-//                        originalImages[url] = null
-//                    }
+                    urls.filterIndexed() { i, url ->
+                        i < index - Settings.originalPreloadOffset || i > index + Settings.originalPreloadOffset
+                    }
+                    .forEach { url ->
+                        MemoryManager.removeOriginalBitmap(url)
+                        originalUrlStates[url] = LoadState.IDLE
+                    }
 
                     it.copy(originalUrlStates = originalUrlStates)
                 }

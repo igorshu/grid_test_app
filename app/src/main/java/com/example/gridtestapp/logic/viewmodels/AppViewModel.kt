@@ -159,7 +159,13 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         }
     }
 
-    private fun updateOuterImages(indexesOnScreen: List<Int>) {
+    /*
+    *
+    * Здесь чистим превью картинки из памяти за пределеми preload-а
+    *
+     */
+
+    private fun updateOuterPreviews(indexesOnScreen: List<Int>) {
         if (indexesOnScreen.isEmpty()) {
             return
         }
@@ -252,7 +258,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 loadImageAgain(event)
             }
             is ChangeVisibleIndexes -> {
-                updateOuterImages(event.indexesOnScreen.sorted())
+                updateOuterPreviews(event.indexesOnScreen.sorted())
                 if (event.index != null) {
                     val url = state.value.urls[event.index]
                     loadImageFromMemory(url)

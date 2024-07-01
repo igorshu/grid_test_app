@@ -11,8 +11,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 
 object MemoryManager {
 
-    private var previews: MutableMap<String, ImageBitmap> = mutableMapOf()
-    private var original: MutableMap<String, ImageBitmap> = mutableMapOf()
+    private var previews: MutableMap<String, ImageBitmap?> = mutableMapOf()
+    private var original: MutableMap<String, ImageBitmap?> = mutableMapOf()
 
     fun addPreviewBitmap(url: String, bitmap: ImageBitmap) {
         previews[url] = bitmap
@@ -28,6 +28,8 @@ object MemoryManager {
 
     fun previewExists(url: String) = getPreviewBitmap(url) != null
 
+    /* --- Original --- */
+
     fun addOriginalBitmap(url: String, bitmap: ImageBitmap) {
         original[url] = bitmap
     }
@@ -41,4 +43,8 @@ object MemoryManager {
     }
 
     fun originalExists(url: String) = getOriginalBitmap(url) != null
+
+    fun setOriginalRange(preloadRange: IntRange) {
+
+    }
 }
