@@ -6,7 +6,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import androidx.core.content.ContextCompat.getSystemService
-import com.example.gridtestapp.logic.viewmodels.MainViewModel.Companion.MAIN_URL
+import com.example.gridtestapp.logic.viewmodels.AppViewModel.Companion.MAIN_URL
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

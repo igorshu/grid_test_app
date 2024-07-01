@@ -123,9 +123,9 @@ fun ImageGrid(mainState: MainScreenState,
                 }
             }
 
-            when (appState.urlStates[url]) {
+            when (appState.previewUrlStates[url]) {
                 LoadState.LOADED -> {
-                    val imageBitmap = MemoryManager.getBitmap(url)
+                    val imageBitmap = MemoryManager.getPreviewBitmap(url)
                     if (imageBitmap != null) {
                         Image(
                             painter = BitmapPainter(imageBitmap),
@@ -143,76 +143,81 @@ fun ImageGrid(mainState: MainScreenState,
                         Box(modifier = Modifier.aspectRatio(1.0f)) {}
                     }
                 }
+                LoadState.IDLE,
                 LoadState.LOADING -> {
                     ImageLoader(mainState, onMainEvent)
                 }
                 LoadState.FAIL -> {
-                    Box(
-                        modifier = Modifier
-                            .aspectRatio(1.0f)
-                            .clickable { onAppEvent(ShowImageFailDialog(url)) }
-                        ,
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(stringResource(id = R.string.error))
-                    }
-                }
-                LoadState.IDLE -> {
-                    ImageLoader(mainState, onMainEvent)
+                    FailBox(onAppEvent, url)
                 }
                 else -> {}
             }
 
-            if (appState.showImageFailDialog.isSome { it == url }) {
-                val imageError = appState.imageErrors[url]
-                imageError?.let {
-                    ImageFailDialog(onAppEvent, imageError, url)
-                }
-            }
+            ImageFailDialog(onAppEvent, appState, url)
         }
     }
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun ImageFailDialog(
+fun FailBox(
     onAppEvent: OnAppEvent,
-    imageError: MainScreenState.ImageError,
     url: String
 ) {
-    AlertDialog(onDismissRequest = { onAppEvent(DismissImageFailDialog) }) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 15.dp, horizontal = 10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    stringResource(id = R.string.loading_error),
-                    style = TextStyle(fontSize = 24.sp)
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-                Text(imageError.errorMessage)
-                Spacer(modifier = Modifier.height(5.dp))
-                if (imageError.canBeLoad) {
-                    Button(
-                        modifier = Modifier.padding(top = 15.dp),
-                        onClick = { onAppEvent(LoadImageAgain(url)) }
-                    ) {
-                        Text(stringResource(id = R.string.load_again))
-                    }
-                }
-                Button(
-                    modifier = Modifier.padding(top = 15.dp),
-                    onClick = { onAppEvent(DismissImageFailDialog) }
+    Box(
+        modifier = Modifier
+            .aspectRatio(1.0f)
+            .clickable { onAppEvent(ShowImageFailDialog(url)) },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(stringResource(id = R.string.error))
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+fun ImageFailDialog(
+    onAppEvent: OnAppEvent,
+    appState: AppState,
+    url: String
+) {
+    if (appState.showImageFailDialog.isSome { it == url }) {
+        val imageError = appState.imageErrors[url]
+        imageError?.let {
+            AlertDialog(onDismissRequest = { onAppEvent(DismissImageFailDialog) }) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.background)
                 ) {
-                    Text(stringResource(id = R.string.ok))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 15.dp, horizontal = 10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            stringResource(id = R.string.loading_error),
+                            style = TextStyle(fontSize = 24.sp)
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Text(imageError.errorMessage)
+                        Spacer(modifier = Modifier.height(5.dp))
+                        if (imageError.canBeLoad) {
+                            Button(
+                                modifier = Modifier.padding(top = 15.dp),
+                                onClick = { onAppEvent(LoadImageAgain(url)) }
+                            ) {
+                                Text(stringResource(id = R.string.load_again))
+                            }
+                        }
+                        Button(
+                            modifier = Modifier.padding(top = 15.dp),
+                            onClick = { onAppEvent(DismissImageFailDialog) }
+                        ) {
+                            Text(stringResource(id = R.string.ok))
+                        }
+                    }
                 }
             }
         }

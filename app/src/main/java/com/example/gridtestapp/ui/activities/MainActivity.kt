@@ -65,10 +65,14 @@ class MainActivity : ComponentActivity() {
                                 val urls = appState.value.urls
                                 ImageViewModel(urls, application, index to (url!!))
                             }
+
+                            val imageState = imageViewModel.state.collectAsState()
+                            val mainState = mainViewModel.state.collectAsState()
+
                             ImageContent(
-                                imageViewModel.state,
-                                appViewModel.state,
-                                mainViewModel.state,
+                                imageState.value,
+                                appState.value,
+                                mainState.value,
                                 imageViewModel.onEvent,
                                 appViewModel.onEvent,
                                 routes,

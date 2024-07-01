@@ -13,6 +13,7 @@ import com.example.gridtestapp.core.ConnectionManager
 import com.example.gridtestapp.core.Settings
 import com.example.gridtestapp.logic.coroutines.ImageLoadFail
 import com.example.gridtestapp.logic.coroutines.UnknownFail
+import com.example.gridtestapp.logic.coroutines.imageCacheDispatcher
 import com.example.gridtestapp.logic.coroutines.imageExceptionHandler
 import com.example.gridtestapp.logic.coroutines.showError
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
@@ -32,7 +33,6 @@ import com.example.gridtestapp.ui.cache.CacheManager
 import com.example.gridtestapp.ui.cache.MemoryManager
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,7 +45,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.koin.core.component.KoinComponent
 import org.koin.dsl.module
-import java.util.concurrent.Executors
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -53,7 +52,6 @@ import kotlin.math.roundToInt
 class AppViewModel(private val application: Application): AndroidViewModel(application), KoinComponent {
 
     private val handler = CoroutineExceptionHandler { _, exception -> showError(application, viewModelScope, exception) }
-    private val imageCacheDispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
 
     private val appName = application.getString(application.applicationInfo.labelRes)
 
@@ -62,9 +60,9 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
     private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad ->
         _state.update {
-            val loadedUrls = it.urlStates.toMutableMap().apply { put(url, LoadState.FAIL) }
+            val loadedUrls = it.previewUrlStates.toMutableMap().apply { put(url, LoadState.FAIL) }
             val imageErrors = it.imageErrors.toMutableMap().apply { put(url, MainScreenState.ImageError(errorMessage, canBeLoad)) }
-            it.copy(urlStates = loadedUrls, imageErrors = imageErrors)
+            it.copy(previewUrlStates = loadedUrls, imageErrors = imageErrors)
         }
     }
 
@@ -113,7 +111,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
         lines.forEach { url ->
             _state.update {
-                it.copy(urlStates = it.urlStates.toMutableMap().apply { put(url, LoadState.IDLE) })
+                it.copy(previewUrlStates = it.previewUrlStates.toMutableMap().apply { put(url, LoadState.IDLE) })
             }
         }
     }
@@ -121,7 +119,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     private suspend fun loadImage(url: String) {
         if (CacheManager.isNotCached(url)) {
             _state.update {
-                it.copy(urlStates = it.urlStates.toMutableMap().apply { put(url, LoadState.LOADING) })
+                it.copy(previewUrlStates = it.previewUrlStates.toMutableMap().apply { put(url, LoadState.LOADING) })
             }
             if (CacheManager.loadImage(url)) {
                 setLoadedState(url)
@@ -135,11 +133,11 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         val bitmap: ImageBitmap? = CacheManager.previewImageBitmap(url)
         if (bitmap != null) {
 
-            MemoryManager.addBitmap(url, bitmap)
+            MemoryManager.addPreviewBitmap(url, bitmap)
 
             _state.update {
                 return@update it.copy(
-                    urlStates = it.urlStates.toMutableMap().apply { put(url, LoadState.LOADED) }
+                    previewUrlStates = it.previewUrlStates.toMutableMap().apply { put(url, LoadState.LOADED) }
                 )
             }
         }
@@ -153,8 +151,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
     private fun loadImageFromMemory(url: String) {
         viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
-            if (!MemoryManager.exists(url)) {
-                if (state.value.urlStates[url] == LoadState.IDLE) {
+            if (!MemoryManager.previewExists(url)) {
+                if (state.value.previewUrlStates[url] == LoadState.IDLE) {
                     loadImage(url)
                 }
             }
@@ -175,15 +173,15 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         }
 
         _state.update {
-            val urlStates = it.urlStates.toMutableMap()
+            val urlStates = it.previewUrlStates.toMutableMap()
             outerUrls.forEach { url ->
-                MemoryManager.removeBitmap(url)
+                MemoryManager.removePreviewBitmap(url)
 
                 if (urlStates[url] != LoadState.FAIL && urlStates[url] != LoadState.LOADING) {
                     urlStates[url] = LoadState.IDLE
                 }
             }
-            it.copy(urlStates = urlStates, screenRange = screenRange, preloadRange = preloadRange)
+            it.copy(previewUrlStates = urlStates, screenRange = screenRange, preloadRange = preloadRange)
         }
     }
 
@@ -204,7 +202,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         }
 
         val newState = _state.updateAndGet {
-            val urlStates = it.urlStates.entries.associate { entry ->
+            val urlStates = it.previewUrlStates.entries.associate { entry ->
                 if (entry.value == LoadState.LOADING || entry.value == LoadState.FAIL) {
                     entry.key to LoadState.IDLE
                 } else {
@@ -212,7 +210,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 }
             }
 
-            it.copy(urlStates = urlStates)
+            it.copy(previewUrlStates = urlStates)
         }
 
         newState
@@ -224,6 +222,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     val onEvent: OnAppEvent = { event ->
+        Log.d("OnAppEvent", "event = $event")
+
         when (event) {
             is ToggleFullScreen -> _state.update {
                 if (it.currentScreen == Screen.IMAGE) { it.copy(showTopBar = !it.showTopBar, showSystemBars = !it.showSystemBars) } else { it }

@@ -10,7 +10,7 @@ enum class Screen {
 data class AppState internal constructor (
 
     val urls: List<String>,
-    val urlStates: Map<String, LoadState>,
+    val previewUrlStates: Map<String, LoadState>,
     val showImageFailDialog: Option<String>,
     val imageErrors: Map<String, MainScreenState.ImageError>,
     val screenRange: IntRange,
@@ -28,7 +28,7 @@ data class AppState internal constructor (
     companion object {
         fun init(title: String): AppState = AppState(
             urls = listOf(),
-            urlStates = hashMapOf(),
+            previewUrlStates = hashMapOf(),
             showImageFailDialog = None,
             imageErrors = hashMapOf(),
             screenRange = IntRange(0, 0),

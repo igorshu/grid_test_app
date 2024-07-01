@@ -4,13 +4,13 @@ import androidx.compose.ui.graphics.ImageBitmap
 
 data class ImageScreenState internal constructor (
     val imageLoaded: Boolean,
-    val originalImages: Map<String, ImageBitmap?>,
+    val originalUrlStates: Map<String, LoadState>,
     val index: Int,
 ) {
     companion object {
         fun init(initialIndex: Int) = ImageScreenState(
             imageLoaded = false,
-            originalImages = hashMapOf(),
+            originalUrlStates = hashMapOf(),
             index = initialIndex,
         )
     }

@@ -8,8 +8,10 @@ import com.example.gridtestapp.ui.cache.CacheManager
 import com.example.gridtestapp.ui.exceptions.ImageLoadException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import java.io.FileNotFoundException
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeoutException
 
 
@@ -21,6 +23,8 @@ fun showError(context: Context, coroutineScope: CoroutineScope, throwable: Throw
         Toast.makeText(context, throwable.message, Toast.LENGTH_LONG).show()
     }
 }
+
+val imageCacheDispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
 
 fun imageExceptionHandler(
     imageLoadFail: ImageLoadFail,

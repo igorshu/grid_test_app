@@ -16,7 +16,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,11 +30,13 @@ import com.example.gridtestapp.logic.events.OnImageEvent
 import com.example.gridtestapp.logic.events.ToggleFullScreen
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.ImageScreenState
+import com.example.gridtestapp.logic.states.LoadState.FAIL
+import com.example.gridtestapp.logic.states.LoadState.LOADED
 import com.example.gridtestapp.logic.states.MainScreenState
+import com.example.gridtestapp.ui.cache.MemoryManager
 import com.example.gridtestapp.ui.navigation.Routes
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import kotlinx.coroutines.flow.StateFlow
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
@@ -47,18 +48,14 @@ import net.engawapg.lib.zoomable.zoomable
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ImageContent(
-    imageStateFlow: StateFlow<ImageScreenState>,
-    appStateFlow: StateFlow<AppState>,
-    mainStateFlow: StateFlow<MainScreenState>,
+    imageState: ImageScreenState,
+    appState: AppState,
+    mainState: MainScreenState,
     onEvent: OnImageEvent,
     onAppEvent: OnAppEvent,
     routes: Routes,
     paddingValues: PaddingValues,
 ) {
-
-    val imageState = imageStateFlow.collectAsState()
-    val appState = appStateFlow.collectAsState()
-    val mainState = mainStateFlow.collectAsState()
 
     val left = remember { paddingValues.calculateLeftPadding(LayoutDirection.Ltr) }
     val top = remember { paddingValues.calculateTopPadding() }
@@ -67,7 +64,7 @@ fun ImageContent(
 
     val systemUiController: SystemUiController = rememberSystemUiController()
     systemUiController.systemBarsBehavior = BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-    systemUiController.isSystemBarsVisible = appState.value.showSystemBars
+    systemUiController.isSystemBarsVisible = appState.showSystemBars
 
     Box(
         modifier = Modifier
@@ -82,47 +79,58 @@ fun ImageContent(
         contentAlignment = Alignment.Center
     ) {
         val pagerState = rememberPagerState(
-            initialPage = imageState.value.index,
-            pageCount = { appState.value.urls.size }
+            initialPage = imageState.index,
+            pageCount = { appState.urls.size }
         )
         HorizontalPager(state = pagerState) { index ->
-            val url = appState.value.urls[index]
+            val url = appState.urls[index]
 
-            val originalImage = imageState.value.originalImages[url]
-            if (originalImage != null) {
+            val urlState = imageState.originalUrlStates[url]
+            if (urlState == LOADED) {
+                val originalImage = MemoryManager.getOriginalBitmap(url)
                 val interactionSource = remember { MutableInteractionSource() }
 
-                val painter = BitmapPainter(originalImage)
-                val zoomState = rememberZoomState(
-                    minScale = 0.011f,
-                    maxScale = 10f,
-                    exitScale = 0.6f,
-                    onExit = routes::goBack,
-                )
-                Image(
-                    painter = painter,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable(
-                            interactionSource,
-                            indication = null,
-                        ) {
-                            onAppEvent(ToggleFullScreen)
-                        }
-                        .zoomable(zoomState)
-                )
+                if (originalImage != null) {
+                    val painter = BitmapPainter(originalImage)
+                    val zoomState = rememberZoomState(
+                        minScale = 0.011f,
+                        maxScale = 10f,
+                        exitScale = 0.6f,
+                        onExit = routes::goBack,
+                    )
+                    Image(
+                        painter = painter,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                interactionSource,
+                                indication = null,
+                            ) {
+                                onAppEvent(ToggleFullScreen)
+                            }
+                            .zoomable(zoomState)
+                    )
+                } else {
+                    Box(modifier = Modifier.aspectRatio(1.0f)) {}
+                }
             } else {
-                Box(
-                    modifier = Modifier.aspectRatio(1.0f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
-                    LaunchedEffect(key1 = url) {
-                        onEvent(LoadOriginalImageFromDisk(url, index))
+                val urlState = appState.previewUrlStates[url]
+                if (urlState == FAIL) {
+                    FailBox(onAppEvent, url)
+                } else {
+                    Box(
+                        modifier = Modifier.aspectRatio(1.0f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
+                        LaunchedEffect(key1 = url) {
+                            onEvent(LoadOriginalImageFromDisk(url, index))
+                        }
                     }
                 }
             }
+            ImageFailDialog(onAppEvent, appState, url)
         }
     }
 }

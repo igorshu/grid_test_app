@@ -4,15 +4,17 @@ import android.app.Application
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gridtestapp.core.Settings
 import com.example.gridtestapp.logic.coroutines.ImageLoadFail
 import com.example.gridtestapp.logic.coroutines.UnknownFail
+import com.example.gridtestapp.logic.coroutines.imageCacheDispatcher
 import com.example.gridtestapp.logic.coroutines.imageExceptionHandler
 import com.example.gridtestapp.logic.coroutines.showError
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
 import com.example.gridtestapp.logic.events.OnImageEvent
 import com.example.gridtestapp.logic.states.ImageScreenState
+import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.ui.cache.CacheManager
+import com.example.gridtestapp.ui.cache.MemoryManager
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -57,20 +59,35 @@ class ImageViewModel(
     }
 
     private fun loadOriginalImageFromDisk(index: Int, url: String) {
-        viewModelScope.launch(handler) {
+        viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
             if (CacheManager.isCached(url)) {
                 val bitmap = CacheManager.originalImageBitmap(url)
                 _state.update {
-                    val originalImages = it.originalImages.toMutableMap()
-                    originalImages[url] = bitmap
+                    MemoryManager.addOriginalBitmap(url, bitmap)
 
-                    urls.filterIndexed() { i, url ->
-                        i < index - Settings.originalPreloadOffset && i > index + Settings.originalPreloadOffset
-                    }.forEach { url ->
-                        originalImages[url] = null
+                    val originalUrlStates = it.originalUrlStates.toMutableMap()
+                    originalUrlStates[url] = LoadState.LOADED
+
+//                    urls.filterIndexed() { i, url ->
+//                        i < index - Settings.originalPreloadOffset && i > index + Settings.originalPreloadOffset
+//                    }.forEach { url ->
+//                        originalImages[url] = null
+//                    }
+
+                    it.copy(originalUrlStates = originalUrlStates)
+                }
+            } else {
+                _state.update {
+                    val originalUrlStates = it.originalUrlStates.toMutableMap().apply { put(url, LoadState.LOADING) }
+                    it.copy(originalUrlStates = originalUrlStates)
+                }
+                if (CacheManager.loadImage(url)) {
+                    val bitmap = CacheManager.originalImageBitmap(url)
+                    MemoryManager.addOriginalBitmap(url, bitmap)
+                    _state.update {
+                        val originalUrlStates = it.originalUrlStates.toMutableMap().apply { put(url, LoadState.LOADED) }
+                        it.copy(originalUrlStates = originalUrlStates)
                     }
-
-                    it.copy(originalImages = originalImages)
                 }
             }
         }
