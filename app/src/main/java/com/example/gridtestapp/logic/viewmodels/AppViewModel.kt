@@ -33,6 +33,8 @@ import com.example.gridtestapp.ui.cache.CacheManager
 import com.example.gridtestapp.ui.cache.MemoryManager
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,6 +42,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -50,6 +53,8 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 class AppViewModel(private val application: Application): AndroidViewModel(application), KoinComponent {
+
+    private var updateOuterPreviewsJob: Job? = null
 
     private val handler = CoroutineExceptionHandler { _, exception -> showError(application, viewModelScope, exception) }
 
@@ -258,7 +263,14 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 loadImageAgain(event)
             }
             is ChangeVisibleIndexes -> {
-                updateOuterPreviews(event.indexesOnScreen.sorted())
+                updateOuterPreviewsJob?.cancel()
+                updateOuterPreviewsJob = viewModelScope.launch {
+                    delay(100)
+                    if (isActive) {
+                        updateOuterPreviews(event.indexesOnScreen.sorted())
+                    }
+                }
+
                 if (event.index != null) {
                     val url = state.value.urls[event.index]
                     loadImageFromMemory(url)
