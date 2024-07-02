@@ -20,6 +20,8 @@ import org.koin.dsl.module
 
 class NotificationsManager {
 
+    private var builder: NotificationCompat.Builder? = null
+
     private fun prebuildNotification(context: Context): NotificationCompat.Builder {
         val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
             .setContentTitle("Grid Notification")
@@ -34,15 +36,14 @@ class NotificationsManager {
     }
 
     fun showAppNotification(context: Context) {
-        val notification = prebuildNotification(context)
-            .build()
-        val notificationManager = context.getSystemService(NotificationManager::class.java)
+        builder = prebuildNotification(context)
 
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        val notificationManager = context.getSystemService(NotificationManager::class.java)
+        notificationManager.notify(NOTIFICATION_ID, builder?.build())
     }
 
     fun showImageNotification(context: Context, bitmap: Bitmap?, url: String) {
-        val notification = prebuildNotification(context)
+        builder = prebuildNotification(context)
             .setContentText(url)
             .setStyle(
                 NotificationCompat
@@ -50,13 +51,22 @@ class NotificationsManager {
                     .bigPicture(bitmap)
                     .bigLargeIcon(null as Bitmap?)
             )
-            .build()
+
         val notificationManager = context.getSystemService(NotificationManager::class.java)
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        notificationManager.notify(NOTIFICATION_ID, builder?.build())
     }
 
     fun hideNotification(context: Context) {
-        context.getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder?.let {
+                it.setTimeoutAfter(5_000)
+
+                val notificationManager = context.getSystemService(NotificationManager::class.java)
+                notificationManager.notify(NOTIFICATION_ID, it.build())
+            }
+        } else {
+            context.getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
+        }
     }
 
     fun requestPermissions(activity: ComponentActivity) {
