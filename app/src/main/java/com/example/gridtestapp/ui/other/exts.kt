@@ -1,6 +1,5 @@
 package com.example.gridtestapp.ui.other
 
-import android.util.Log
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import com.example.gridtestapp.logic.events.OnMainEvent

@@ -15,7 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.gridtestapp.R
-import com.example.gridtestapp.core.NotificationService
+import com.example.gridtestapp.core.NotificationsManager
 import com.example.gridtestapp.logic.events.AppPaused
 import com.example.gridtestapp.logic.events.AppResumed
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
@@ -31,13 +31,13 @@ import org.koin.androidx.compose.get
 
 class MainActivity : ComponentActivity() {
 
-    private val notificationService: NotificationService by inject()
+    private val notificationsManager: NotificationsManager by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        notificationService.createNotificationChannel(this)
+        notificationsManager.createNotificationChannel(this)
 
         setContent {
             GridTestAppTheme {
@@ -110,9 +110,9 @@ class MainActivity : ComponentActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         when(requestCode) {
-            NotificationService.PERMISSION_REQUEST_CODE -> {
+            NotificationsManager.PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PERMISSION_GRANTED) {
-                    notificationService.showAppNotification(this)
+                    notificationsManager.showAppNotification(this)
                 } else {
                     Toast.makeText(this, getString(R.string.please_notifications), Toast.LENGTH_LONG).show()
                 }
@@ -123,6 +123,6 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
 
-        notificationService.requestPermissions(this)
+        notificationsManager.requestPermissions(this)
     }
 }

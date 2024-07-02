@@ -46,7 +46,7 @@ import com.example.gridtestapp.logic.events.ShowImageFailDialog
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.MainScreenState
-import com.example.gridtestapp.ui.cache.MemoryManager
+import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.other.onWidthChanged
 import com.google.accompanist.systemuicontroller.SystemUiController

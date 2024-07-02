@@ -5,7 +5,7 @@ import android.widget.Toast
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.gridtestapp.core.NotificationService
+import com.example.gridtestapp.core.NotificationsManager
 import com.example.gridtestapp.core.Settings
 import com.example.gridtestapp.logic.coroutines.ImageLoadFail
 import com.example.gridtestapp.logic.coroutines.UnknownFail
@@ -17,8 +17,8 @@ import com.example.gridtestapp.logic.events.OnImageEvent
 import com.example.gridtestapp.logic.events.ShowImageNotification
 import com.example.gridtestapp.logic.states.ImageScreenState
 import com.example.gridtestapp.logic.states.LoadState
-import com.example.gridtestapp.ui.cache.CacheManager
-import com.example.gridtestapp.ui.cache.MemoryManager
+import com.example.gridtestapp.core.cache.CacheManager
+import com.example.gridtestapp.core.cache.MemoryManager
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,7 +39,7 @@ class ImageViewModel(
     initial: Pair<Int, String>
 ): AndroidViewModel(application), KoinComponent {
 
-    private val notificationService: NotificationService by inject()
+    private val notificationsManager: NotificationsManager by inject()
 
     private val handler = CoroutineExceptionHandler { _, exception -> showError(application, viewModelScope, exception)}
 
@@ -66,7 +66,7 @@ class ImageViewModel(
             is ShowImageNotification -> {
                 viewModelScope.launch(handler) {
                     val imageBitmap = MemoryManager.getOriginalBitmap(event.url)
-                    notificationService.showImageNotification(application, imageBitmap?.asAndroidBitmap(), event.url)
+                    notificationsManager.showImageNotification(application, imageBitmap?.asAndroidBitmap(), event.url)
                 }
 
             }

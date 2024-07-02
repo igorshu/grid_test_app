@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import com.example.gridtestapp.core.connection.ConnectionManager
-import com.example.gridtestapp.ui.cache.CacheManager
+import com.example.gridtestapp.core.cache.CacheManager
 import com.example.gridtestapp.ui.exceptions.ImageLoadException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope

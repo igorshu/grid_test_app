@@ -10,7 +10,7 @@ import androidx.lifecycle.viewModelScope
 import arrow.core.None
 import arrow.core.Option
 import com.example.gridtestapp.core.connection.ConnectionManager
-import com.example.gridtestapp.core.NotificationService
+import com.example.gridtestapp.core.NotificationsManager
 import com.example.gridtestapp.core.Settings
 import com.example.gridtestapp.logic.coroutines.ImageLoadFail
 import com.example.gridtestapp.logic.coroutines.UnknownFail
@@ -32,8 +32,8 @@ import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.MainScreenState
 import com.example.gridtestapp.logic.states.Screen
-import com.example.gridtestapp.ui.cache.CacheManager
-import com.example.gridtestapp.ui.cache.MemoryManager
+import com.example.gridtestapp.core.cache.CacheManager
+import com.example.gridtestapp.core.cache.MemoryManager
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -58,7 +58,7 @@ import kotlin.math.roundToInt
 
 class AppViewModel(private val application: Application): AndroidViewModel(application), KoinComponent {
 
-    private val notificationService: NotificationService by inject()
+    private val notificationsManager: NotificationsManager by inject()
 
     private var updateOuterPreviewsJob: Job? = null
 
@@ -254,7 +254,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                     )
                 }
                 viewModelScope.launch(handler) {
-                    notificationService.showAppNotification(application)
+                    notificationsManager.showAppNotification(application)
                 }
             }
             is ImageScreenEvent -> _state.update {
@@ -287,10 +287,10 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 }
             }
             is AppResumed -> viewModelScope.launch(handler) {
-                notificationService.showAppNotification(application)
+                notificationsManager.showAppNotification(application)
             }
             is AppPaused -> viewModelScope.launch(handler) {
-                notificationService.hideNotification(application)
+                notificationsManager.hideNotification(application)
             }
         }
     }

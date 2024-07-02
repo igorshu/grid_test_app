@@ -1,7 +1,7 @@
 package com.example.gridtestapp.ui
 
 import android.app.Application
-import com.example.gridtestapp.core.NotificationService
+import com.example.gridtestapp.core.NotificationsManager
 import com.example.gridtestapp.logic.viewmodels.MainViewModel
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.ui.navigation.Routes
@@ -23,7 +23,7 @@ class App: Application(), KoinComponent {
                 Routes.module,
                 MainViewModel.module,
                 AppViewModel.module,
-                NotificationService.module,
+                NotificationsManager.module,
             )
         }
     }

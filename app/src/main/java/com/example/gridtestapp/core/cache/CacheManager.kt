@@ -1,4 +1,4 @@
-package com.example.gridtestapp.ui.cache
+package com.example.gridtestapp.core.cache
 
 import android.content.Context
 import android.graphics.Bitmap

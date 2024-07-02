@@ -31,7 +31,7 @@ import com.example.gridtestapp.logic.states.ImageScreenState
 import com.example.gridtestapp.logic.states.LoadState.FAIL
 import com.example.gridtestapp.logic.states.LoadState.LOADED
 import com.example.gridtestapp.logic.states.MainScreenState
-import com.example.gridtestapp.ui.cache.MemoryManager
+import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.ui.navigation.Routes
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController

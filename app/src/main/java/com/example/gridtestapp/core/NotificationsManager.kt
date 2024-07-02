@@ -18,7 +18,7 @@ import androidx.core.content.ContextCompat
 import com.example.gridtestapp.R
 import org.koin.dsl.module
 
-class NotificationService {
+class NotificationsManager {
 
     private fun prebuildNotification(context: Context): NotificationCompat.Builder {
         val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
@@ -59,7 +59,7 @@ class NotificationService {
         context.getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
     }
 
-    fun requestPermissions(activity: ComponentActivity, ) {
+    fun requestPermissions(activity: ComponentActivity) {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
             if (ContextCompat.checkSelfPermission(activity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 getNotificationPermission(activity)
@@ -74,7 +74,7 @@ class NotificationService {
 
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationChannel = NotificationChannel(NotificationService.NOTIFICATION_CHANNEL, "Application Notification", IMPORTANCE_DEFAULT)
+            val notificationChannel = NotificationChannel(NOTIFICATION_CHANNEL, "Application Notification", IMPORTANCE_DEFAULT)
             notificationChannel.description = "description"
 
             val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -89,7 +89,7 @@ class NotificationService {
         const val PERMISSION_REQUEST_CODE = 10101
 
         val module = module {
-            single { NotificationService() }
+            single { NotificationsManager() }
         }
     }
 }

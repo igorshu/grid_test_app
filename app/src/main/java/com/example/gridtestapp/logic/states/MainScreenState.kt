@@ -1,8 +1,5 @@
 package com.example.gridtestapp.logic.states
 
-import arrow.core.None
-import arrow.core.Option
-
 data class MainScreenState(
     val widthConsumed: Boolean,
 ) {
