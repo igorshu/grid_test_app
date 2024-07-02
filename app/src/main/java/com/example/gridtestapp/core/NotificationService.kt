@@ -7,12 +7,14 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.NotificationManager.IMPORTANCE_HIGH
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.example.gridtestapp.R
 import org.koin.dsl.module
 
@@ -59,7 +61,7 @@ class NotificationService {
 
     fun requestPermissions(activity: ComponentActivity, ) {
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
-            if (!activity.shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)) {
+            if (ContextCompat.checkSelfPermission(activity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 getNotificationPermission(activity)
             }
         }
