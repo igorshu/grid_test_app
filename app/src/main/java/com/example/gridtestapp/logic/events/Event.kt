@@ -15,6 +15,8 @@ data class ShowImageFailDialog(val url: String) : AppEvent()
 data object DismissImageFailDialog : AppEvent()
 data class LoadImageAgain(val url: String) : AppEvent()
 data class ChangeVisibleIndexes(val indexesOnScreen: HashSet<Int>, val index: Int?) : AppEvent()
+data object AppResumed : AppEvent()
+data object AppPaused : AppEvent()
 
 
 // События основного экрана

@@ -10,11 +10,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.gridtestapp.R
 import com.example.gridtestapp.core.NotificationService
+import com.example.gridtestapp.logic.events.AppPaused
+import com.example.gridtestapp.logic.events.AppResumed
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.logic.viewmodels.ImageViewModel
 import com.example.gridtestapp.logic.viewmodels.MainViewModel
@@ -49,6 +52,14 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     topBar = { TopBar(appState.value, routes, appViewModel.onEvent) },
                 ) { paddingValues ->
+
+                    LifecycleResumeEffect(Unit) {
+                        appViewModel.onEvent(AppResumed)
+                        onPauseOrDispose {
+                            appViewModel.onEvent(AppPaused)
+                        }
+                    }
+
                     NavHost(
                         modifier = Modifier,
                         navController = navController,
@@ -113,11 +124,5 @@ class MainActivity : ComponentActivity() {
         super.onStart()
 
         notificationService.requestPermissions(this)
-    }
-
-    override fun onStop() {
-        super.onStop()
-
-        notificationService.hideNotification(this)
     }
 }

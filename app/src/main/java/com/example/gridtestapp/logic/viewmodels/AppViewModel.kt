@@ -17,6 +17,8 @@ import com.example.gridtestapp.logic.coroutines.UnknownFail
 import com.example.gridtestapp.logic.coroutines.imageCacheDispatcher
 import com.example.gridtestapp.logic.coroutines.imageExceptionHandler
 import com.example.gridtestapp.logic.coroutines.showError
+import com.example.gridtestapp.logic.events.AppPaused
+import com.example.gridtestapp.logic.events.AppResumed
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
 import com.example.gridtestapp.logic.events.ImageScreenEvent
@@ -283,6 +285,12 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                     val url = state.value.urls[event.index]
                     loadImageFromMemory(url)
                 }
+            }
+            is AppResumed -> viewModelScope.launch(handler) {
+                notificationService.showAppNotification(application)
+            }
+            is AppPaused -> viewModelScope.launch(handler) {
+                notificationService.hideNotification(application)
             }
         }
     }
