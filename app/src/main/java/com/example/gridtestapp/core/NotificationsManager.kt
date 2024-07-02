@@ -65,8 +65,14 @@ class NotificationsManager {
                 notificationManager.notify(NOTIFICATION_ID, it.build())
             }
         } else {
-            context.getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
+            cancelNotifications(context)
         }
+
+    }
+
+    fun cancelNotifications(context: Context) {
+        builder = null
+        context.getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
     }
 
     fun requestPermissions(activity: ComponentActivity) {

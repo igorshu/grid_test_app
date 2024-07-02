@@ -4,6 +4,7 @@ import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.Scaffold
@@ -33,9 +34,20 @@ class MainActivity : ComponentActivity() {
 
     private val notificationsManager: NotificationsManager by inject()
 
+    private fun addCallBackDispatcher() {
+        onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                notificationsManager.cancelNotifications(this@MainActivity)
+                finish()
+            }
+        })
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        addCallBackDispatcher()
 
         notificationsManager.createNotificationChannel(this)
 
