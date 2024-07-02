@@ -6,7 +6,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
@@ -51,7 +50,7 @@ class MainActivity : ComponentActivity() {
                     topBar = { TopBar(appState.value, routes, appViewModel.onEvent) },
                 ) { paddingValues ->
                     NavHost(
-                        modifier = Modifier.padding(paddingValues),
+                        modifier = Modifier,
                         navController = navController,
                         startDestination = Routes.MAIN,
                     ) {
@@ -64,7 +63,8 @@ class MainActivity : ComponentActivity() {
                                 appState = appState.value,
                                 onMainEvent = mainViewModel.onEvent,
                                 onAppEvent = appViewModel.onEvent,
-                                )
+                                paddingValues,
+                            )
                         }
                         composable(Routes.IMAGE) { backStackEntry ->
                             val mainViewModel = get<MainViewModel>()
@@ -86,7 +86,8 @@ class MainActivity : ComponentActivity() {
                                 imageViewModel.onEvent,
                                 appViewModel.onEvent,
                                 routes,
-                                paddingValues)
+                                paddingValues,
+                            )
                         }
                     }
                 }

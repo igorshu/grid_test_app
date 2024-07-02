@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.CircularProgressIndicator
@@ -21,9 +20,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
 import com.example.gridtestapp.logic.events.OnAppEvent
@@ -39,7 +35,6 @@ import com.example.gridtestapp.ui.cache.MemoryManager
 import com.example.gridtestapp.ui.navigation.Routes
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import kotlinx.coroutines.flow.collect
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 
@@ -60,11 +55,6 @@ fun ImageContent(
     paddingValues: PaddingValues,
 ) {
 
-    val left = remember { paddingValues.calculateLeftPadding(LayoutDirection.Ltr) }
-    val top = remember { paddingValues.calculateTopPadding() }
-    val right = remember { paddingValues.calculateRightPadding(LayoutDirection.Ltr) }
-    val bottom = remember { paddingValues.calculateBottomPadding() }
-
     val systemUiController: SystemUiController = rememberSystemUiController()
     systemUiController.systemBarsBehavior = BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     systemUiController.isSystemBarsVisible = appState.showSystemBars
@@ -72,12 +62,6 @@ fun ImageContent(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(
-                start = max(left - paddingValues.calculateLeftPadding(LayoutDirection.Ltr), 0.dp),
-                top = max(top - paddingValues.calculateTopPadding(), 0.dp),
-                end = max(right - paddingValues.calculateRightPadding(LayoutDirection.Ltr), 0.dp),
-                bottom = max(bottom - paddingValues.calculateBottomPadding(), 0.dp),
-            )
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
