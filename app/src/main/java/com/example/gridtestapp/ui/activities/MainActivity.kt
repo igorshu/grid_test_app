@@ -1,10 +1,8 @@
 package com.example.gridtestapp.ui.activities
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.NotificationManager.IMPORTANCE_HIGH
-import android.os.Build
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -16,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.gridtestapp.R
 import com.example.gridtestapp.core.NotificationService
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.logic.viewmodels.ImageViewModel
@@ -30,13 +29,13 @@ import org.koin.androidx.compose.get
 
 class MainActivity : ComponentActivity() {
 
-    val notificationService: NotificationService by inject()
+    private val notificationService: NotificationService by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        createNotificationChannel()
+        notificationService.createNotificationChannel(this)
 
         setContent {
             GridTestAppTheme {
@@ -95,16 +94,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-
-    fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationChannel = NotificationChannel(NotificationService.NOTIFICATION_CHANNEL, "Application Notification", IMPORTANCE_HIGH)
-            notificationChannel.description = "description"
-
-            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(notificationChannel)
+        when(requestCode) {
+            NotificationService.PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PERMISSION_GRANTED) {
+                    notificationService.showAppNotification(this)
+                } else {
+                    Toast.makeText(this, getString(R.string.please_notifications), Toast.LENGTH_LONG).show()
+                }
+            }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        notificationService.requestPermissions(this)
     }
 
     override fun onStop() {

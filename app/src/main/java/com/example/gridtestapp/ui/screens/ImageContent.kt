@@ -86,17 +86,18 @@ fun ImageContent(
             pageCount = { appState.urls.size }
         )
 
-        LaunchedEffect(key1 = pagerState) {
-            snapshotFlow { pagerState.settledPage }.collect { page ->
-                val url = appState.urls[page]
-                onImageEvent(ShowImageNotification(url))
-            }
-        }
-
         HorizontalPager(state = pagerState) { index ->
             val url = appState.urls[index]
 
             val urlState = imageState.originalUrlStates[url]
+
+            LaunchedEffect(key1 = pagerState, key2 = urlState) {
+                snapshotFlow { pagerState.settledPage }.collect { page ->
+                    val url = appState.urls[page]
+                    onImageEvent(ShowImageNotification(url))
+                }
+            }
+
             if (urlState == LOADED) {
                 val originalImage = remember {
                     MemoryManager.getOriginalBitmap(url)

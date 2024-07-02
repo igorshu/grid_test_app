@@ -237,8 +237,6 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     val onEvent: OnAppEvent = { event ->
-        Log.d("OnAppEvent", "event = $event")
-
         when (event) {
             is ToggleFullScreen -> _state.update {
                 if (it.currentScreen == Screen.IMAGE) { it.copy(showTopBar = !it.showTopBar, showSystemBars = !it.showSystemBars) } else { it }
