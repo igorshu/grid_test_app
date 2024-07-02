@@ -5,7 +5,7 @@ import android.app.Activity
 import android.app.Activity.NOTIFICATION_SERVICE
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.NotificationManager.IMPORTANCE_HIGH
+import android.app.NotificationManager.IMPORTANCE_DEFAULT
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -24,8 +24,8 @@ class NotificationService {
         val notification = NotificationCompat.Builder(context, NOTIFICATION_CHANNEL)
             .setContentTitle("Grid Notification")
             .setContentText("This is our notification!")
-            .setSmallIcon(R.drawable.splash_icon)
-            .setPriority(IMPORTANCE_HIGH)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setPriority(IMPORTANCE_DEFAULT)
             .setOnlyAlertOnce(true)
             .setOngoing(true)
             .setAutoCancel(false)
@@ -74,7 +74,7 @@ class NotificationService {
 
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationChannel = NotificationChannel(NotificationService.NOTIFICATION_CHANNEL, "Application Notification", IMPORTANCE_HIGH)
+            val notificationChannel = NotificationChannel(NotificationService.NOTIFICATION_CHANNEL, "Application Notification", IMPORTANCE_DEFAULT)
             notificationChannel.description = "description"
 
             val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
