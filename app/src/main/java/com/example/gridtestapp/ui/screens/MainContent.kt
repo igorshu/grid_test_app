@@ -116,7 +116,7 @@ fun ToggleButtons(appState: AppState, onAppEvent: OnAppEvent) {
     }
     val context = LocalContext.current
     val buttonTexts = remember() {
-        val buttonCount = if (true || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { 3 } else { 2 }
+        val buttonCount = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { 3 } else { 2 }
         arrayOf(
             getString(context, R.string.by_default),
             getString(context, R.string.light),
@@ -136,7 +136,7 @@ fun ToggleButtons(appState: AppState, onAppEvent: OnAppEvent) {
         selectedContentColor = (if (appState.isDark()) LightColorScheme else DarkColorScheme).inverseSurface,
         unselectedContentColor = (if (appState.isDark()) DarkColorScheme else LightColorScheme).inverseSurface,
     ) { index ->
-        onAppEvent(ChangeTheme(index))
+        onAppEvent(ChangeTheme(index + if (buttonTexts.size == 3) 0 else 1))
     }
 }
 
