@@ -49,6 +49,15 @@ data class AppState internal constructor (
         )
     }
 
+    fun clear() = copy(
+        urls = listOf(),
+        previewUrlStates = hashMapOf(),
+        showImageFailDialog = None,
+        imageErrors = hashMapOf(),
+        screenRange = IntRange(0, 0),
+        preloadRange = IntRange(0, 0),
+    )
+
     @Composable
     fun isDark(): Boolean {
         return theme == Theme.DARK || isSystemInDarkTheme() && theme == Theme.BY_DEFAULT

@@ -18,6 +18,7 @@ data class ChangeVisibleIndexes(val indexesOnScreen: HashSet<Int>, val index: In
 data object AppResumed : AppEvent()
 data object AppPaused : AppEvent()
 data class ChangeTheme(val index: Int) : AppEvent()
+data object Reload : AppEvent()
 
 
 // События основного экрана

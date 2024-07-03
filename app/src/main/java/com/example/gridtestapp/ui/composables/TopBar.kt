@@ -3,6 +3,7 @@ package com.example.gridtestapp.ui.composables
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.LayoutDirection
 import com.example.gridtestapp.logic.events.OnAppEvent
+import com.example.gridtestapp.logic.events.Reload
 import com.example.gridtestapp.logic.events.SharePressed
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.Screen
@@ -28,7 +30,7 @@ import com.example.gridtestapp.ui.navigation.Routes
 fun TopBar(
     appState: AppState,
     routes: Routes,
-    onEvent: OnAppEvent,
+    onAppEvent: OnAppEvent,
 ) {
     val initialTop = TopAppBarDefaults.windowInsets.getTop(LocalDensity.current)
     val top = remember { initialTop}
@@ -62,8 +64,16 @@ fun TopBar(
                 }
             },
             actions = {
-                if (appState.currentScreen == Screen.IMAGE) {
-                    IconButton(onClick = { onEvent(SharePressed) }) {
+                if (appState.currentScreen == Screen.MAIN) {
+                    IconButton(onClick = { onAppEvent(Reload) }) {
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            contentDescription = "Share",
+                            tint = Color.White
+                        )
+                    }
+                } else if (appState.currentScreen == Screen.IMAGE) {
+                    IconButton(onClick = { onAppEvent(SharePressed) }) {
                         Icon(
                             imageVector = Icons.Filled.Share,
                             contentDescription = "Share",

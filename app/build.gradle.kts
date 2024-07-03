@@ -81,6 +81,7 @@ dependencies {
     implementation("androidx.core:core-splashscreen:1.0.1")
 
     implementation("io.arrow-kt:arrow-core:1.2.4")
+    implementation("org.apache.commons:commons-io:1.3.2")
 
     implementation("com.robertlevonyan.compose:buttontogglegroup:1.2.0")
 

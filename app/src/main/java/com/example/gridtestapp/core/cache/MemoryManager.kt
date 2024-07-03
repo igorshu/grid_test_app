@@ -28,6 +28,8 @@ object MemoryManager {
 
     fun previewExists(url: String) = getPreviewBitmap(url) != null
 
+    fun clearPreviews() = previews.clear()
+
     /* --- Original --- */
 
     fun addOriginalBitmap(url: String, bitmap: ImageBitmap) {
@@ -44,7 +46,13 @@ object MemoryManager {
 
     fun originalExists(url: String) = getOriginalBitmap(url) != null
 
-    fun setOriginalRange(preloadRange: IntRange) {
 
+    fun clearOriginals() = original.clear()
+
+    /* --- Common --- */
+
+    fun clearAll() {
+        previews.clear()
+        original.clear()
     }
 }

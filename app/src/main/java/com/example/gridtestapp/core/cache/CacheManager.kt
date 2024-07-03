@@ -13,6 +13,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
+import org.apache.commons.io.FileUtils
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import java.io.File
@@ -202,6 +203,11 @@ object CacheManager: KoinComponent {
     fun removeBothImages(url: String) {
         File(urlToOriginalPath(url)).delete()
         File(urlToPreviewPath(url)).delete()
+    }
+
+    fun clearAll() {
+        FileUtils.cleanDirectory(File(previewDir))
+        FileUtils.cleanDirectory(File(originalDir))
     }
 }
 

@@ -35,6 +35,7 @@ import com.example.gridtestapp.logic.states.Screen
 import com.example.gridtestapp.core.cache.CacheManager
 import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.logic.events.ChangeTheme
+import com.example.gridtestapp.logic.events.Reload
 import com.example.gridtestapp.logic.states.Theme
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
@@ -91,14 +92,12 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         viewModelScope.launch(handler + Dispatchers.IO) {
             CacheManager.init(application)
             loadLinks()
-            startListenConnectionState()
-        }
-        viewModelScope.launch(handler + Dispatchers.IO) {
+            listenConnectionState()
             ConnectionManager.init(application)
         }
     }
 
-    private suspend fun startListenConnectionState() {
+    private suspend fun listenConnectionState() {
         ConnectionManager
             .state
             .onEach { connectionState ->
@@ -295,6 +294,17 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 notificationsManager.hideNotification(application)
             }
             is ChangeTheme -> _state.update { it.copy(theme = Theme.entries[event.index]) }
+            is Reload -> reload()
+        }
+    }
+
+    private fun reload() {
+        viewModelScope.launch(handler + Dispatchers.IO) {
+            MemoryManager.clearAll()
+            CacheManager.clearAll()
+
+            _state.update { it.clear() }
+            loadLinks()
         }
     }
 
