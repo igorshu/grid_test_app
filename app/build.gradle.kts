@@ -82,6 +82,7 @@ dependencies {
 
     implementation("io.arrow-kt:arrow-core:1.2.4")
 
+    implementation("com.robertlevonyan.compose:buttontogglegroup:1.2.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

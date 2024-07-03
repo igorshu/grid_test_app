@@ -1,5 +1,6 @@
 package com.example.gridtestapp.ui.screens
 
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,10 +33,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat.getString
 import com.example.gridtestapp.R
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
@@ -47,10 +50,14 @@ import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.MainScreenState
 import com.example.gridtestapp.core.cache.MemoryManager
+import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.other.onWidthChanged
+import com.example.gridtestapp.ui.theme.DarkColorScheme
+import com.example.gridtestapp.ui.theme.LightColorScheme
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.robertlevonyan.compose.buttontogglegroup.RowToggleButtonGroup
 import org.koin.androidx.compose.get
 
 /*
@@ -72,26 +79,64 @@ fun MainContent(
     val systemUiController: SystemUiController = rememberSystemUiController()
     systemUiController.isSystemBarsVisible = true
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-            .background(MaterialTheme.colorScheme.background)
     ) {
-        if (appState.urls.isEmpty()) {
-            Loader()
-        } else {
-            ImageGrid(
-                mainState = mainState,
-                appState = appState,
-                onMainEvent = onMainEvent,
-                onAppEvent = onAppEvent,
-            ) { url, index ->
-                if (!routes.isImage()) {
-                    routes.navigate(Routes.imageRoute(url, index))
+        ToggleButtons(appState, onAppEvent)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            if (appState.urls.isEmpty()) {
+                Loader()
+            } else {
+                ImageGrid(
+                    mainState = mainState,
+                    appState = appState,
+                    onMainEvent = onMainEvent,
+                    onAppEvent = onAppEvent,
+                ) { url, index ->
+                    if (!routes.isImage()) {
+                        routes.navigate(Routes.imageRoute(url, index))
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun ToggleButtons(appState: AppState, onAppEvent: OnAppEvent) {
+    val primarySelection = remember {
+        appState.theme
+    }
+    val context = LocalContext.current
+    val buttonTexts = remember() {
+        val buttonCount = if (true || Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { 3 } else { 2 }
+        arrayOf(
+            getString(context, R.string.by_default),
+            getString(context, R.string.light),
+            getString(context, R.string.dark),
+        ).slice(3 - buttonCount..2).toTypedArray()
+    }
+
+    RowToggleButtonGroup(
+        modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp),
+        buttonCount = buttonTexts.size,
+        buttonTexts = buttonTexts,
+        buttonHeight = 45.dp,
+        primarySelection = primarySelection.ordinal,
+        selectedColor = (if (appState.isDark()) LightColorScheme else DarkColorScheme).background,
+        unselectedColor = (if (appState.isDark()) DarkColorScheme else LightColorScheme).background,
+        borderColor = (if (appState.isDark()) LightColorScheme else DarkColorScheme).background,
+        selectedContentColor = (if (appState.isDark()) LightColorScheme else DarkColorScheme).inverseSurface,
+        unselectedContentColor = (if (appState.isDark()) DarkColorScheme else LightColorScheme).inverseSurface,
+    ) { index ->
+        onAppEvent(ChangeTheme(index))
     }
 }
 

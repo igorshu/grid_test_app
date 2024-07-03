@@ -12,18 +12,23 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+val softWhite: Color = Color(0xFFFFFBFE)
+val softBlack: Color = Color(0xFF000602)
+
 val DarkColorScheme = darkColorScheme(
     primary = Purple40,
     secondary = PurpleGrey40,
     tertiary = Pink40,
-    background = Color(0xFF000602),
+    background = softBlack,
+    inverseSurface = softWhite,
 )
 
 val LightColorScheme = lightColorScheme(
     primary = Purple80,
     secondary = PurpleGrey80,
     tertiary = Pink80,
-    background = Color(0xFFFFFBFE),
+    background = softWhite,
+    inverseSurface = softBlack,
 )
 
 @Composable

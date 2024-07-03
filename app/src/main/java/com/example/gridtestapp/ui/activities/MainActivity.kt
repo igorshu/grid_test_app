@@ -52,14 +52,16 @@ class MainActivity : ComponentActivity() {
         notificationsManager.createNotificationChannel(this)
 
         setContent {
-            GridTestAppTheme {
+            val appViewModel = get<AppViewModel>()
+            val appState = appViewModel.state.collectAsState()
+            GridTestAppTheme(
+                darkTheme = appState.value.isDark()
+            ) {
                 val navController = rememberNavController()
                 val routes = get<Routes>()
-                val appViewModel = get<AppViewModel>()
 
                 routes.setController(navController, appViewModel.onEvent)
 
-                val appState = appViewModel.state.collectAsState()
 
                 Scaffold(
                     topBar = { TopBar(appState.value, routes, appViewModel.onEvent) },

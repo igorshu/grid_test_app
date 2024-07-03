@@ -34,6 +34,8 @@ import com.example.gridtestapp.logic.states.MainScreenState
 import com.example.gridtestapp.logic.states.Screen
 import com.example.gridtestapp.core.cache.CacheManager
 import com.example.gridtestapp.core.cache.MemoryManager
+import com.example.gridtestapp.logic.events.ChangeTheme
+import com.example.gridtestapp.logic.states.Theme
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -292,6 +294,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is AppPaused -> viewModelScope.launch(handler) {
                 notificationsManager.hideNotification(application)
             }
+            is ChangeTheme -> _state.update { it.copy(theme = Theme.entries[event.index]) }
         }
     }
 

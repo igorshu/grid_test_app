@@ -1,5 +1,7 @@
 package com.example.gridtestapp.logic.states
 
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
 import arrow.core.None
 import arrow.core.Option
 
@@ -7,8 +9,13 @@ enum class Screen {
     MAIN, IMAGE
 }
 
+enum class Theme {
+    BY_DEFAULT, LIGHT, DARK
+}
+
 data class AppState internal constructor (
 
+    val theme: Theme,
     val urls: List<String>,
     val previewUrlStates: Map<String, LoadState>,
     val showImageFailDialog: Option<String>,
@@ -22,11 +29,10 @@ data class AppState internal constructor (
     val title: String,
     val currentScreen: Screen,
     val shareUrl: String?
-
 ) {
-
     companion object {
         fun init(title: String): AppState = AppState(
+            theme = Theme.BY_DEFAULT,
             urls = listOf(),
             previewUrlStates = hashMapOf(),
             showImageFailDialog = None,
@@ -41,5 +47,10 @@ data class AppState internal constructor (
             currentScreen = Screen.MAIN,
             shareUrl = null
         )
+    }
+
+    @Composable
+    fun isDark(): Boolean {
+        return theme == Theme.DARK || isSystemInDarkTheme() && theme == Theme.BY_DEFAULT
     }
 }

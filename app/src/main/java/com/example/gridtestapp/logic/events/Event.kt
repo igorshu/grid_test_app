@@ -17,6 +17,7 @@ data class LoadImageAgain(val url: String) : AppEvent()
 data class ChangeVisibleIndexes(val indexesOnScreen: HashSet<Int>, val index: Int?) : AppEvent()
 data object AppResumed : AppEvent()
 data object AppPaused : AppEvent()
+data class ChangeTheme(val index: Int) : AppEvent()
 
 
 // События основного экрана

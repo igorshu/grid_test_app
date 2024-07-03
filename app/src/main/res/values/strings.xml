@@ -6,4 +6,7 @@
     <string name="not_valid_url">Не валидный урл</string>
     <string name="ok">ОК</string>
     <string name="please_notifications">Пожалуйста, включите разрешение на оповещения в настройках</string>
+    <string name="by_default">По умолчанию</string>
+    <string name="dark">Тёмный</string>
+    <string name="light">Светлый</string>
 </resources>
