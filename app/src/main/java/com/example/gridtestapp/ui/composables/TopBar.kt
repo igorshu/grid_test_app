@@ -43,7 +43,6 @@ fun TopBar(
             right = TopAppBarDefaults.windowInsets.getRight(LocalDensity.current, LayoutDirection.Ltr),
             bottom = TopAppBarDefaults.windowInsets.getBottom(LocalDensity.current),
             )
-
         TopAppBar(
             modifier = Modifier,
             windowInsets = insets,

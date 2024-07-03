@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -51,6 +52,7 @@ import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.MainScreenState
 import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.logic.events.ChangeTheme
+import com.example.gridtestapp.logic.states.Theme
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.other.onWidthChanged
 import com.example.gridtestapp.ui.theme.DarkColorScheme
@@ -84,7 +86,8 @@ fun MainContent(
             .fillMaxSize()
             .padding(paddingValues)
     ) {
-        ToggleButtons(appState, onAppEvent)
+        val theme = appState.theme
+        ToggleButtons(theme, onAppEvent)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -110,12 +113,12 @@ fun MainContent(
 }
 
 @Composable
-fun ToggleButtons(appState: AppState, onAppEvent: OnAppEvent) {
+fun ToggleButtons(theme: Theme, onAppEvent: OnAppEvent) {
     val primarySelection = remember {
-        appState.theme
+        theme
     }
     val context = LocalContext.current
-    val buttonTexts = remember() {
+    val buttonTexts = remember {
         val buttonCount = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { 3 } else { 2 }
         arrayOf(
             getString(context, R.string.by_default),
@@ -124,17 +127,23 @@ fun ToggleButtons(appState: AppState, onAppEvent: OnAppEvent) {
         ).slice(3 - buttonCount..2).toTypedArray()
     }
 
+    val selectedColor = (if (theme.isDark(isSystemInDarkTheme())) LightColorScheme else DarkColorScheme).background
+    val unselectedColor = (if (theme.isDark(isSystemInDarkTheme())) DarkColorScheme else LightColorScheme).background
+    val borderColor = (if (theme.isDark(isSystemInDarkTheme())) LightColorScheme else DarkColorScheme).background
+    val selectedContentColor = (if (theme.isDark(isSystemInDarkTheme())) LightColorScheme else DarkColorScheme).inverseSurface
+    val unselectedContentColor = (if (theme.isDark(isSystemInDarkTheme())) DarkColorScheme else LightColorScheme).inverseSurface
+
     RowToggleButtonGroup(
         modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp),
         buttonCount = buttonTexts.size,
         buttonTexts = buttonTexts,
         buttonHeight = 45.dp,
         primarySelection = primarySelection.ordinal,
-        selectedColor = (if (appState.isDark()) LightColorScheme else DarkColorScheme).background,
-        unselectedColor = (if (appState.isDark()) DarkColorScheme else LightColorScheme).background,
-        borderColor = (if (appState.isDark()) LightColorScheme else DarkColorScheme).background,
-        selectedContentColor = (if (appState.isDark()) LightColorScheme else DarkColorScheme).inverseSurface,
-        unselectedContentColor = (if (appState.isDark()) DarkColorScheme else LightColorScheme).inverseSurface,
+        selectedColor = selectedColor,
+        unselectedColor = unselectedColor,
+        borderColor = borderColor,
+        selectedContentColor = selectedContentColor,
+        unselectedContentColor = unselectedContentColor,
     ) { index ->
         onAppEvent(ChangeTheme(index + if (buttonTexts.size == 3) 0 else 1))
     }

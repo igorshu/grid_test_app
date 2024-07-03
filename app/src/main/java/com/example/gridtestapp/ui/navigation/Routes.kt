@@ -20,19 +20,8 @@ class Routes() {
         navController.navigate(route)
     }
 
-    fun setController(
-        navController: NavHostController,
-        onAppEvent: OnAppEvent
-    ) {
+    fun setController(navController: NavHostController) {
         this.navController = navController
-
-        navController.addOnDestinationChangedListener { _, destination, arguments ->
-            if (destination.route == MAIN) {
-                onAppEvent(MainScreenEvent)
-            } else if (destination.route == IMAGE) {
-                onAppEvent(ImageScreenEvent(url = arguments!!.getString("url")!!))
-            }
-        }
     }
 
     fun goBack() {

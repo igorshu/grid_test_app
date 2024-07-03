@@ -7,11 +7,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.navigation.NavController.OnDestinationChangedListener
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -19,11 +23,15 @@ import com.example.gridtestapp.R
 import com.example.gridtestapp.core.NotificationsManager
 import com.example.gridtestapp.logic.events.AppPaused
 import com.example.gridtestapp.logic.events.AppResumed
+import com.example.gridtestapp.logic.events.ImageScreenEvent
+import com.example.gridtestapp.logic.events.MainScreenEvent
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.logic.viewmodels.ImageViewModel
 import com.example.gridtestapp.logic.viewmodels.MainViewModel
 import com.example.gridtestapp.ui.composables.TopBar
 import com.example.gridtestapp.ui.navigation.Routes
+import com.example.gridtestapp.ui.navigation.Routes.Companion.IMAGE
+import com.example.gridtestapp.ui.navigation.Routes.Companion.MAIN
 import com.example.gridtestapp.ui.screens.ImageContent
 import com.example.gridtestapp.ui.screens.MainContent
 import com.example.gridtestapp.ui.theme.GridTestAppTheme
@@ -53,18 +61,33 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val appViewModel = get<AppViewModel>()
-            val appState = appViewModel.state.collectAsState()
+            val navController = rememberNavController()
+            remember {
+                val listener = OnDestinationChangedListener { controller, destination, arguments ->
+                    if (destination.route == MAIN) {
+                        appViewModel.onEvent(MainScreenEvent)
+                    } else if (destination.route == IMAGE) {
+                        appViewModel.onEvent(ImageScreenEvent(url = arguments!!.getString("url")!!))
+                    }
+                }
+                navController.addOnDestinationChangedListener(listener)
+                listener
+            }
+            val appState = get<AppViewModel>().state.collectAsState()
+
+            val theme by remember {
+                derivedStateOf {
+                    appState.value.theme
+                }
+            }
+
+            get<Routes>().setController(navController)
+
             GridTestAppTheme(
-                darkTheme = appState.value.isDark()
+                darkTheme = theme.isDark(systemTheme = isSystemInDarkTheme())
             ) {
-                val navController = rememberNavController()
-                val routes = get<Routes>()
-
-                routes.setController(navController, appViewModel.onEvent)
-
-
                 Scaffold(
-                    topBar = { TopBar(appState.value, routes, appViewModel.onEvent) },
+                    topBar = { TopBar(appState.value, get<Routes>(), get<AppViewModel>().onEvent) },
                 ) { paddingValues ->
 
                     LifecycleResumeEffect(Unit) {
@@ -87,7 +110,7 @@ class MainActivity : ComponentActivity() {
                                 mainState = mainState.value,
                                 appState = appState.value,
                                 onMainEvent = mainViewModel.onEvent,
-                                onAppEvent = appViewModel.onEvent,
+                                onAppEvent = get<AppViewModel>().onEvent,
                                 paddingValues,
                             )
                         }
@@ -109,8 +132,8 @@ class MainActivity : ComponentActivity() {
                                 appState.value,
                                 mainState.value,
                                 imageViewModel.onEvent,
-                                appViewModel.onEvent,
-                                routes,
+                                get<AppViewModel>().onEvent,
+                                get<Routes>(),
                                 paddingValues,
                             )
                         }

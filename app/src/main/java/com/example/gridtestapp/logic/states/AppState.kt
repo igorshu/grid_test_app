@@ -10,7 +10,11 @@ enum class Screen {
 }
 
 enum class Theme {
-    BY_DEFAULT, LIGHT, DARK
+    BY_DEFAULT, LIGHT, DARK;
+
+    fun isDark(systemTheme: Boolean): Boolean {
+        return this == DARK || systemTheme && this == BY_DEFAULT
+    }
 }
 
 data class AppState internal constructor (
