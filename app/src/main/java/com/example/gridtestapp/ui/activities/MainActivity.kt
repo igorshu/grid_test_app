@@ -26,8 +26,6 @@ import com.example.gridtestapp.logic.events.AppResumed
 import com.example.gridtestapp.logic.events.ImageScreenEvent
 import com.example.gridtestapp.logic.events.MainScreenEvent
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
-import com.example.gridtestapp.logic.viewmodels.ImageViewModel
-import com.example.gridtestapp.logic.viewmodels.MainViewModel
 import com.example.gridtestapp.ui.composables.TopBar
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.navigation.Routes.Companion.IMAGE
@@ -103,39 +101,13 @@ class MainActivity : ComponentActivity() {
                         startDestination = Routes.MAIN,
                     ) {
                         composable(Routes.MAIN) {
-                            val mainViewModel = get<MainViewModel>()
-                            val mainState = mainViewModel.state.collectAsState()
-
-                            MainContent(
-                                mainState = mainState.value,
-                                appState = appState.value,
-                                onMainEvent = mainViewModel.onEvent,
-                                onAppEvent = get<AppViewModel>().onEvent,
-                                paddingValues,
-                            )
+                            MainContent(paddingValues)
                         }
                         composable(Routes.IMAGE) { backStackEntry ->
-                            val mainViewModel = get<MainViewModel>()
-
-                            val url = backStackEntry.arguments?.getString("url")
+                            val url = backStackEntry.arguments?.getString("url")!!
                             val index = backStackEntry.arguments?.getString("index")!!.toInt()
-                            val imageViewModel = remember {
-                                val urls = appState.value.urls
-                                ImageViewModel(urls, application, index to (url!!))
-                            }
 
-                            val imageState = imageViewModel.state.collectAsState()
-                            val mainState = mainViewModel.state.collectAsState()
-
-                            ImageContent(
-                                imageState.value,
-                                appState.value,
-                                mainState.value,
-                                imageViewModel.onEvent,
-                                get<AppViewModel>().onEvent,
-                                get<Routes>(),
-                                paddingValues,
-                            )
+                            ImageContent(index, url, appState.value.urls)
                         }
                     }
                 }

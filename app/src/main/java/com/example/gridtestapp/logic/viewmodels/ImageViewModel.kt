@@ -25,8 +25,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import org.koin.dsl.module
 
 /*
 *
@@ -36,14 +38,15 @@ import org.koin.core.component.inject
 class ImageViewModel(
     private val urls: List<String>,
     private val application: Application,
-    initial: Pair<Int, String>
+    index: Int,
+    url: String,
 ): AndroidViewModel(application), KoinComponent {
 
     private val notificationsManager: NotificationsManager by inject()
 
     private val handler = CoroutineExceptionHandler { _, exception -> showError(application, viewModelScope, exception)}
 
-    private val _state: MutableStateFlow<ImageScreenState> = MutableStateFlow(ImageScreenState.init(initialIndex = initial.first))
+    private val _state: MutableStateFlow<ImageScreenState> = MutableStateFlow(ImageScreenState.init(initialIndex = index))
     val state: StateFlow<ImageScreenState> = _state.asStateFlow()
 
     private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad -> }
@@ -55,7 +58,7 @@ class ImageViewModel(
     private val _imageExceptionHandler = imageExceptionHandler(imageLoadFail, unknownFail)
 
     init {
-        loadOriginalImageFromDisk(initial.first, initial.second)
+        loadOriginalImageFromDisk(index, url)
     }
 
     val onEvent: OnImageEvent = { event ->
@@ -106,6 +109,12 @@ class ImageViewModel(
                     }
                 }
             }
+        }
+    }
+
+    companion object {
+        val module = module {
+            viewModel { params -> ImageViewModel(urls = params.get(), get(), index = params.get(), url = params.get()) }
         }
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -28,6 +29,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,26 +44,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.getString
 import com.example.gridtestapp.R
+import com.example.gridtestapp.core.cache.MemoryManager
+import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
 import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.OnAppEvent
-import com.example.gridtestapp.logic.events.OnMainEvent
 import com.example.gridtestapp.logic.events.ShowImageFailDialog
-import com.example.gridtestapp.logic.states.AppState
+import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
 import com.example.gridtestapp.logic.states.LoadState
-import com.example.gridtestapp.logic.states.MainScreenState
-import com.example.gridtestapp.core.cache.MemoryManager
-import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.logic.states.Theme
+import com.example.gridtestapp.logic.viewmodels.AppViewModel
+import com.example.gridtestapp.logic.viewmodels.MainViewModel
 import com.example.gridtestapp.ui.navigation.Routes
-import com.example.gridtestapp.ui.other.onWidthChanged
 import com.example.gridtestapp.ui.theme.DarkColorScheme
 import com.example.gridtestapp.ui.theme.LightColorScheme
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.robertlevonyan.compose.buttontogglegroup.RowToggleButtonGroup
 import org.koin.androidx.compose.get
+import org.koin.androidx.compose.koinViewModel
 
 /*
 *
@@ -69,12 +72,10 @@ import org.koin.androidx.compose.get
 */
 @Composable
 fun MainContent(
-    mainState: MainScreenState,
-    appState: AppState,
-    onMainEvent: OnMainEvent,
-    onAppEvent: OnAppEvent,
     paddingValues: PaddingValues,
+    appViewModel: AppViewModel = koinViewModel(),
 ) {
+    val appState = appViewModel.state.collectAsState()
 
     val routes = get<Routes>()
 
@@ -86,23 +87,22 @@ fun MainContent(
             .fillMaxSize()
             .padding(paddingValues)
     ) {
-        val theme = appState.theme
-        ToggleButtons(theme, onAppEvent)
+        val theme = remember {
+            derivedStateOf {
+                appState.value.theme
+            }
+        }
+        ToggleButtons(theme.value, appViewModel.onEvent)
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            if (appState.urls.isEmpty()) {
+            if (appState.value.urls.isEmpty()) {
                 Loader()
             } else {
-                ImageGrid(
-                    mainState = mainState,
-                    appState = appState,
-                    onMainEvent = onMainEvent,
-                    onAppEvent = onAppEvent,
-                ) { url, index ->
+                ImageGrid() { url, index ->
                     if (!routes.isImage()) {
                         routes.navigate(Routes.imageRoute(url, index))
                     }
@@ -117,6 +117,7 @@ fun ToggleButtons(theme: Theme, onAppEvent: OnAppEvent) {
     val primarySelection = remember {
         theme
     }
+
     val context = LocalContext.current
     val buttonTexts = remember {
         val buttonCount = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { 3 } else { 2 }
@@ -153,36 +154,48 @@ fun ToggleButtons(theme: Theme, onAppEvent: OnAppEvent) {
 
 
 @Composable
-fun ImageGrid(mainState: MainScreenState,
-              appState: AppState,
-              onMainEvent: OnMainEvent,
-              onAppEvent: OnAppEvent,
-              toImageScreen: (url: String, index: Int) -> Unit) {
+fun ImageGrid(
+    appViewModel: AppViewModel = koinViewModel(),
+    mainViewModel: MainViewModel = koinViewModel(),
+    toImageScreen: (url: String, index: Int,
+) -> Unit) {
+
+    val appState = appViewModel.state.collectAsState()
 
     val indexesOnScreen = remember {
         hashSetOf<Int>()
     }
 
+    val gridState = rememberLazyGridState()
+
+    LaunchedEffect(gridState) {
+        gridState.layoutInfo.visibleItemsInfo.getOrNull(0)?.let {
+            mainViewModel.onEvent(UpdateImageWidthEvent(width = it.size.width))
+        }
+    }
+
     LazyVerticalGrid(
+        state = gridState,
         modifier = Modifier.fillMaxSize(),
         columns = GridCells.Adaptive(100.dp),
     ) {
-        itemsIndexed(appState.urls.toList(),
+        itemsIndexed(
+            appState.value.urls.toList(),
             key = { _, url -> url }
         ) { index, url ->
 
             LaunchedEffect(index) {
                 indexesOnScreen.add(index)
-                onAppEvent(ChangeVisibleIndexes(indexesOnScreen, index))
+                appViewModel.onEvent(ChangeVisibleIndexes(indexesOnScreen, index))
             }
             DisposableEffect(index) {
                 onDispose {
                     indexesOnScreen.remove(index)
-                    onAppEvent(ChangeVisibleIndexes(indexesOnScreen, null))
+                    appViewModel.onEvent(ChangeVisibleIndexes(indexesOnScreen, null))
                 }
             }
 
-            when (appState.previewUrlStates[url]) {
+            when (appState.value.previewUrlStates[url]) {
                 LoadState.LOADED -> {
                     val imageBitmap = MemoryManager.getPreviewBitmap(url)
                     if (imageBitmap != null) {
@@ -196,36 +209,31 @@ fun ImageGrid(mainState: MainScreenState,
                                 .clickable(onClick = {
                                     toImageScreen(url, index)
                                 })
-                                .onWidthChanged(mainState, onMainEvent),
                         )
                     } else {
                         Box(modifier = Modifier.aspectRatio(1.0f)) {}
                     }
                 }
                 LoadState.IDLE,
-                LoadState.LOADING -> {
-                    ImageLoader(mainState, onMainEvent)
-                }
-                LoadState.FAIL -> {
-                    FailBox(onAppEvent, url)
-                }
+                LoadState.LOADING -> { ImageLoader() }
+                LoadState.FAIL -> { FailBox(url) }
                 else -> {}
             }
 
-            ImageFailDialog(onAppEvent, appState, url)
+            ImageFailDialog(url)
         }
     }
 }
 
 @Composable
 fun FailBox(
-    onAppEvent: OnAppEvent,
-    url: String
+    url: String,
+    appViewModel: AppViewModel = koinViewModel()
 ) {
     Box(
         modifier = Modifier
             .aspectRatio(1.0f)
-            .clickable { onAppEvent(ShowImageFailDialog(url)) },
+            .clickable { appViewModel.onEvent(ShowImageFailDialog(url)) },
         contentAlignment = Alignment.Center,
     ) {
         Text(stringResource(id = R.string.error))
@@ -235,14 +243,15 @@ fun FailBox(
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun ImageFailDialog(
-    onAppEvent: OnAppEvent,
-    appState: AppState,
-    url: String
+    url: String,
+    appViewModel: AppViewModel = koinViewModel()
 ) {
-    if (appState.showImageFailDialog.isSome { it == url }) {
-        val imageError = appState.imageErrors[url]
+    val appState = appViewModel.state.collectAsState()
+
+    if (appState.value.showImageFailDialog.isSome { it == url }) {
+        val imageError = appState.value.imageErrors[url]
         imageError?.let {
-            AlertDialog(onDismissRequest = { onAppEvent(DismissImageFailDialog) }) {
+            AlertDialog(onDismissRequest = { appViewModel.onEvent(DismissImageFailDialog) }) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -265,14 +274,14 @@ fun ImageFailDialog(
                         if (imageError.canBeLoad) {
                             Button(
                                 modifier = Modifier.padding(top = 15.dp),
-                                onClick = { onAppEvent(LoadImageAgain(url)) }
+                                onClick = { appViewModel.onEvent(LoadImageAgain(url)) }
                             ) {
                                 Text(stringResource(id = R.string.load_again))
                             }
                         }
                         Button(
                             modifier = Modifier.padding(top = 15.dp),
-                            onClick = { onAppEvent(DismissImageFailDialog) }
+                            onClick = { appViewModel.onEvent(DismissImageFailDialog) }
                         ) {
                             Text(stringResource(id = R.string.ok))
                         }
@@ -284,11 +293,10 @@ fun ImageFailDialog(
 }
 
 @Composable
-fun ImageLoader(state: MainScreenState, onEvent: OnMainEvent) {
+fun ImageLoader() {
     Box(
         modifier = Modifier
-            .aspectRatio(1.0f)
-            .onWidthChanged(state, onEvent),
+            .aspectRatio(1.0f),
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))

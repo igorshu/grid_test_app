@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.dsl.module
@@ -36,7 +37,7 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
 
     companion object {
         val module = module {
-            single { MainViewModel(get()) }
+            viewModel { MainViewModel(get()) }
             single { ImageWidth(1) }
         }
     }

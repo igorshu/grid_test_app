@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
@@ -15,28 +14,29 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
-import com.example.gridtestapp.logic.events.OnAppEvent
-import com.example.gridtestapp.logic.events.OnImageEvent
 import com.example.gridtestapp.logic.events.ShowImageNotification
 import com.example.gridtestapp.logic.events.ToggleFullScreen
-import com.example.gridtestapp.logic.states.AppState
-import com.example.gridtestapp.logic.states.ImageScreenState
 import com.example.gridtestapp.logic.states.LoadState.FAIL
 import com.example.gridtestapp.logic.states.LoadState.LOADED
-import com.example.gridtestapp.logic.states.MainScreenState
-import com.example.gridtestapp.core.cache.MemoryManager
+import com.example.gridtestapp.logic.viewmodels.AppViewModel
+import com.example.gridtestapp.logic.viewmodels.ImageViewModel
 import com.example.gridtestapp.ui.navigation.Routes
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
+import org.koin.androidx.compose.get
+import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /*
 *
@@ -46,18 +46,19 @@ import net.engawapg.lib.zoomable.zoomable
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ImageContent(
-    imageState: ImageScreenState,
-    appState: AppState,
-    mainState: MainScreenState,
-    onImageEvent: OnImageEvent,
-    onAppEvent: OnAppEvent,
-    routes: Routes,
-    paddingValues: PaddingValues,
+    index: Int,
+    url: String,
+    urls: List<String>,
+    appViewModel: AppViewModel = koinViewModel(),
+    imageViewModel: ImageViewModel = koinViewModel(parameters = { parametersOf(urls, index, url) })
 ) {
+
+    val imageState = imageViewModel.state.collectAsState()
+    val appState = appViewModel.state.collectAsState()
 
     val systemUiController: SystemUiController = rememberSystemUiController()
     systemUiController.systemBarsBehavior = BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-    systemUiController.isSystemBarsVisible = appState.showSystemBars
+    systemUiController.isSystemBarsVisible = appState.value.showSystemBars
 
     Box(
         modifier = Modifier
@@ -66,19 +67,19 @@ fun ImageContent(
         contentAlignment = Alignment.Center
     ) {
         val pagerState = rememberPagerState(
-            initialPage = imageState.index,
-            pageCount = { appState.urls.size }
+            initialPage = imageState.value.index,
+            pageCount = { urls.size }
         )
 
         HorizontalPager(state = pagerState) { index ->
-            val url = appState.urls[index]
+            val url = urls[index]
 
-            val urlState = imageState.originalUrlStates[url]
+            val urlState = imageState.value.originalUrlStates[url]
 
             LaunchedEffect(key1 = pagerState, key2 = urlState) {
                 snapshotFlow { pagerState.settledPage }.collect { page ->
-                    val url = appState.urls[page]
-                    onImageEvent(ShowImageNotification(url))
+                    val url = urls[page]
+                    imageViewModel.onEvent(ShowImageNotification(url))
                 }
             }
 
@@ -90,6 +91,7 @@ fun ImageContent(
 
                 if (originalImage != null) {
                     val painter = BitmapPainter(originalImage)
+                    val routes = get<Routes>()
                     val zoomState = rememberZoomState(
                         minScale = 0.011f,
                         maxScale = 10f,
@@ -105,7 +107,7 @@ fun ImageContent(
                                 interactionSource,
                                 indication = null,
                             ) {
-                                onAppEvent(ToggleFullScreen)
+                                appViewModel.onEvent(ToggleFullScreen)
                             }
                             .zoomable(zoomState)
                     )
@@ -113,9 +115,9 @@ fun ImageContent(
                     Box(modifier = Modifier.aspectRatio(1.0f)) {}
                 }
             } else {
-                val urlState = appState.previewUrlStates[url]
+                val urlState = appState.value.previewUrlStates[url]
                 if (urlState == FAIL) {
-                    FailBox(onAppEvent, url)
+                    FailBox(url)
                 } else {
                     Box(
                         modifier = Modifier.aspectRatio(1.0f),
@@ -123,12 +125,12 @@ fun ImageContent(
                     ) {
                         CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
                         LaunchedEffect(key1 = url) {
-                            onImageEvent(LoadOriginalImageFromDisk(url, index))
+                            imageViewModel.onEvent(LoadOriginalImageFromDisk(url, index))
                         }
                     }
                 }
             }
-            ImageFailDialog(onAppEvent, appState, url)
+            ImageFailDialog(url)
         }
     }
 }
