@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
     private fun addCallBackDispatcher() {
         onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                notificationsManager.cancelNotifications(this@MainActivity)
+                notificationsManager.cancelNotifications()
                 finish()
             }
         })
@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
 
         addCallBackDispatcher()
 
-        notificationsManager.createNotificationChannel(this)
+        notificationsManager.createNotificationChannel()
 
         setContent {
             val appViewModel = get<AppViewModel>()
@@ -149,7 +149,7 @@ class MainActivity : ComponentActivity() {
         when(requestCode) {
             NotificationsManager.PERMISSION_REQUEST_CODE -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PERMISSION_GRANTED) {
-                    notificationsManager.showAppNotification(this)
+                    notificationsManager.showAppNotification()
                 } else {
                     Toast.makeText(this, getString(R.string.please_notifications), Toast.LENGTH_LONG).show()
                 }

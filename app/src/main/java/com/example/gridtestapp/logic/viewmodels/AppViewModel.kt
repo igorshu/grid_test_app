@@ -69,7 +69,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
     private val appName = application.getString(application.applicationInfo.labelRes)
 
-    val _state: MutableStateFlow<AppState> = MutableStateFlow(AppState.init(appName))
+    private val _state: MutableStateFlow<AppState> = MutableStateFlow(AppState.init(appName))
     val state: StateFlow<AppState> = _state.asStateFlow()
 
     private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad ->
@@ -255,7 +255,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                     )
                 }
                 viewModelScope.launch(handler) {
-                    notificationsManager.showAppNotification(application)
+                    notificationsManager.showAppNotification()
                 }
             }
             is ImageScreenEvent -> _state.update {
@@ -288,10 +288,10 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 }
             }
             is AppResumed -> viewModelScope.launch(handler) {
-                notificationsManager.showAppNotification(application)
+                notificationsManager.showAppNotification()
             }
             is AppPaused -> viewModelScope.launch(handler) {
-                notificationsManager.hideNotification(application)
+                notificationsManager.hideNotification()
             }
             is ChangeTheme -> _state.update { it.copy(theme = Theme.entries[event.index]) }
             is Reload -> reload()

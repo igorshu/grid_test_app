@@ -66,9 +66,8 @@ class ImageViewModel(
             is ShowImageNotification -> {
                 viewModelScope.launch(handler) {
                     val imageBitmap = MemoryManager.getOriginalBitmap(event.url)
-                    notificationsManager.showImageNotification(application, imageBitmap?.asAndroidBitmap(), event.url)
+                    notificationsManager.showImageNotification(imageBitmap?.asAndroidBitmap(), event.url)
                 }
-
             }
         }
     }
