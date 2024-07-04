@@ -127,11 +127,13 @@ fun ToggleButtons(theme: Theme, onAppEvent: OnAppEvent) {
         ).slice(3 - buttonCount..2).toTypedArray()
     }
 
-    val selectedColor = (if (theme.isDark(isSystemInDarkTheme())) LightColorScheme else DarkColorScheme).background
-    val unselectedColor = (if (theme.isDark(isSystemInDarkTheme())) DarkColorScheme else LightColorScheme).background
-    val borderColor = (if (theme.isDark(isSystemInDarkTheme())) LightColorScheme else DarkColorScheme).background
-    val selectedContentColor = (if (theme.isDark(isSystemInDarkTheme())) LightColorScheme else DarkColorScheme).inverseSurface
-    val unselectedContentColor = (if (theme.isDark(isSystemInDarkTheme())) DarkColorScheme else LightColorScheme).inverseSurface
+    val isDark = theme.isDark(isSystemInDarkTheme())
+
+    val selectedColor = (if (isDark) LightColorScheme else DarkColorScheme).background
+    val unselectedColor = (if (isDark) DarkColorScheme else LightColorScheme).background
+    val borderColor = (if (isDark) LightColorScheme else DarkColorScheme).background
+    val selectedContentColor = (if (isDark) LightColorScheme else DarkColorScheme).inverseSurface
+    val unselectedContentColor = (if (isDark) DarkColorScheme else LightColorScheme).inverseSurface
 
     RowToggleButtonGroup(
         modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp),
