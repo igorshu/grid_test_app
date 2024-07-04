@@ -23,7 +23,6 @@ class NotificationsManager(application: Application) {
         NotificationCompat
             .Builder(application, NOTIFICATION_CHANNEL)
             .setContentTitle("Grid Notification")
-            .setContentText("This is our notification!")
             .setSmallIcon(R.drawable.ic_notification)
             .setPriority(IMPORTANCE_DEFAULT)
             .setOnlyAlertOnce(true)
@@ -33,18 +32,23 @@ class NotificationsManager(application: Application) {
     private var notificationManager: NotificationManager = application.getSystemService(NotificationManager::class.java)
 
     fun showAppNotification() {
-        notificationManager.notify(NOTIFICATION_ID, builder.build())
+        notificationManager.notify(NOTIFICATION_ID, builder
+            .setTimeoutAfter(0)
+            .setContentText("This is our notification!")
+            .setStyle(null)
+            .build())
     }
 
     fun showImageNotification(bitmap: Bitmap?, url: String) {
-            builder
-                .setContentText(url)
-                .setStyle(
-                    NotificationCompat
-                        .BigPictureStyle()
-                        .bigPicture(bitmap)
-                        .bigLargeIcon(null as Bitmap?)
-                )
+        builder
+            .setTimeoutAfter(0)
+            .setContentText(url)
+            .setStyle(
+                NotificationCompat
+                    .BigPictureStyle()
+                    .bigPicture(bitmap)
+                    .bigLargeIcon(null as Bitmap?)
+            )
 
         notificationManager.notify(NOTIFICATION_ID, builder.build())
     }
@@ -84,6 +88,13 @@ class NotificationsManager(application: Application) {
 
             notificationManager.createNotificationChannel(notificationChannel)
         }
+    }
+
+    fun showResumeNotification() {
+        notificationManager.cancel(NOTIFICATION_ID)
+        notificationManager.notify(NOTIFICATION_ID, builder
+            .setTimeoutAfter(0)
+            .build())
     }
 
     companion object {

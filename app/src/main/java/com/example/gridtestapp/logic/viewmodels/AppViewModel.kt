@@ -254,9 +254,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                         currentScreen = Screen.MAIN
                     )
                 }
-                viewModelScope.launch(handler) {
-                    notificationsManager.showAppNotification()
-                }
+                notificationsManager.showAppNotification()
             }
             is ImageScreenEvent -> _state.update {
                 it.copy(showTopBar = true,
@@ -287,12 +285,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                     loadImageFromMemory(url)
                 }
             }
-            is AppResumed -> viewModelScope.launch(handler) {
-                notificationsManager.showAppNotification()
-            }
-            is AppPaused -> viewModelScope.launch(handler) {
-                notificationsManager.hideNotification()
-            }
+            is AppResumed -> notificationsManager.showResumeNotification()
+            is AppPaused -> notificationsManager.hideNotification()
             is ChangeTheme -> _state.update { it.copy(theme = Theme.entries[event.index]) }
             is Reload -> reload()
         }
