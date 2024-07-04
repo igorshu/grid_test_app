@@ -42,19 +42,17 @@ object CacheManager: KoinComponent {
     private const val ORIGINAL_DIRECTORY: String = "original_image_cache"
     private const val PREVIEW_DIRECTORY: String = "preview_image_cache"
 
-    private lateinit var originalDir: String // Директория для хранения оригинальных картинок
-    private lateinit var previewDir: String // Директория для хранения превью
-
-    private lateinit var cacheDir: String
+    private lateinit var originalFileDir: File // Директория для хранения оригинальных картинок
+    private lateinit var previewFileDir: File // Директория для хранения превью
 
     fun init(context: Context) {
-        cacheDir = context.cacheDir.path
+        val cacheDir = context.cacheDir.path
 
-        originalDir = "$cacheDir/$ORIGINAL_DIRECTORY"
-        previewDir = "$cacheDir/$PREVIEW_DIRECTORY"
+        originalFileDir = File("$cacheDir/$ORIGINAL_DIRECTORY")
+        previewFileDir = File("$cacheDir/$PREVIEW_DIRECTORY")
 
-        File(originalDir).mkdir()
-        File(previewDir).mkdir()
+        originalFileDir.mkdir()
+        previewFileDir.mkdir()
     }
 
     // Загружаем картинку из интернета и сохраняем в двух экземплярах
@@ -136,8 +134,7 @@ object CacheManager: KoinComponent {
     // Сохраняем оригинальную картинку
 
     private fun saveOriginalImage(url: String, bitmap: Bitmap) {
-        val file = File(urlToOriginalPath(url))
-        val out = FileOutputStream(file)
+        val out = FileOutputStream(urlToOriginalPath(url))
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         out.close()
     }
@@ -145,8 +142,7 @@ object CacheManager: KoinComponent {
     // Сохраняем и сжимаем превью
 
     private fun savePreviewImage(url: String, bitmap: Bitmap) {
-        val file = File(urlToPreviewPath(url))
-        val out = FileOutputStream(file)
+        val out = FileOutputStream(urlToPreviewPath(url))
 
         val width = get<ImageWidth>().value
         val height = bitmap.height * width / bitmap.width
@@ -164,14 +160,14 @@ object CacheManager: KoinComponent {
 
     fun originalImageBitmap(url: String) : ImageBitmap {
         val filePath = urlToOriginalPath(url)
-        return getImageBitmap(filePath)!!
+        return getImageBitmap(filePath.path)!!
     }
 
     // Картинка-превью
 
     fun previewImageBitmap(url: String) : ImageBitmap? {
         val filePath = urlToPreviewPath(url)
-        return getImageBitmap(filePath)
+        return getImageBitmap(filePath.path)
     }
 
     // Загружаем в ImageBitmap с диска
@@ -182,7 +178,7 @@ object CacheManager: KoinComponent {
     }
 
     fun isCached( url: String): Boolean {
-        return File(urlToOriginalPath(url)).exists() && File(urlToPreviewPath(url)).exists()
+        return urlToOriginalPath(url).exists() && urlToPreviewPath(url).exists()
     }
 
     fun isNotCached(url: String): Boolean = !isCached(url)
@@ -194,20 +190,20 @@ object CacheManager: KoinComponent {
         return "${uri.host}_${uri.pathSegments.joinToString("_")}" + if (uri.query != null) "_${uri.query!!.replace(":", "_")}" else ""
     }
 
-    private fun urlToOriginalPath(url: String): String = originalDir + "/" + urlToFilename(url)
+    private fun urlToOriginalPath(url: String): File = File(originalFileDir, urlToFilename(url))
 
-    private fun urlToPreviewPath(url: String): String = previewDir + "/" + urlToFilename(url)
+    private fun urlToPreviewPath(url: String): File = File(previewFileDir, urlToFilename(url))
 
     // Удаляем превью и оригинал с диска
 
     fun removeBothImages(url: String) {
-        File(urlToOriginalPath(url)).delete()
-        File(urlToPreviewPath(url)).delete()
+        urlToOriginalPath(url).delete()
+        urlToPreviewPath(url).delete()
     }
 
     fun clearAll() {
-        FileUtils.cleanDirectory(File(previewDir))
-        FileUtils.cleanDirectory(File(originalDir))
+        FileUtils.cleanDirectory(previewFileDir)
+        FileUtils.cleanDirectory(originalFileDir)
     }
 }
 
