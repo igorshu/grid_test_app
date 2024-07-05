@@ -9,4 +9,6 @@
     <string name="by_default">По умолчанию</string>
     <string name="dark">Тёмный</string>
     <string name="light">Светлый</string>
+    <string name="missing_arguments_s">Отсутствуют аргументы %s</string>
+    <string name="empty_answer">Сервер вернул пустой ответ</string>
 </resources>

@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
                     if (destination.route == MAIN) {
                         appViewModel.onEvent(MainScreenEvent)
                     } else if (destination.route == IMAGE) {
-                        appViewModel.onEvent(ImageScreenEvent(url = arguments!!.getString("url")!!))
+                        appViewModel.onEvent(ImageScreenEvent(url = arguments?.getString("url") ?: ""))
                     }
                 }
                 navController.addOnDestinationChangedListener(listener)
@@ -86,7 +86,7 @@ class MainActivity : ComponentActivity() {
                 darkTheme = theme.isDark(systemTheme = isSystemInDarkTheme())
             ) {
                 Scaffold(
-                    topBar = { TopBar() },
+                    topBar = { TopBar(appViewModel = appViewModel) },
                 ) { paddingValues ->
 
                     LifecycleResumeEffect(Unit) {
@@ -102,13 +102,25 @@ class MainActivity : ComponentActivity() {
                         startDestination = Routes.MAIN,
                     ) {
                         composable(Routes.MAIN) {
-                            MainContent(paddingValues)
+                            MainContent(paddingValues, appViewModel = appViewModel)
                         }
                         composable(Routes.IMAGE) { backStackEntry ->
-                            val url = backStackEntry.arguments?.getString("url")!!
-                            val index = backStackEntry.arguments?.getString("index")!!.toInt()
+                            val url = backStackEntry.arguments?.getString("url")
+                            val index = backStackEntry.arguments?.getString("index")?.toInt()
 
-                            ImageContent(index, url, appState.value.urls)
+                            if (url != null && index != null) {
+                                ImageContent(index, url, appState.value.urls, appViewModel = appViewModel)
+                            } else {
+                                val params = mutableListOf<String>()
+                                    .apply {
+                                        url ?: add("url")
+                                        index ?: add("index")
+                                    }
+                                    .joinToString(", ")
+                                val errorText = getString(R.string.missing_arguments_s, params)
+                                Toast.makeText(applicationContext, errorText, Toast.LENGTH_LONG).show()
+                            }
+
                         }
                     }
                 }

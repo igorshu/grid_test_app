@@ -117,7 +117,7 @@ fun ImageContent(
             } else {
                 val urlState = appState.value.previewUrlStates[url]
                 if (urlState == FAIL) {
-                    FailBox(url)
+                    FailBox(url, appViewModel = appViewModel)
                 } else {
                     Box(
                         modifier = Modifier.aspectRatio(1.0f),
@@ -130,7 +130,7 @@ fun ImageContent(
                     }
                 }
             }
-            ImageFailDialog(url)
+            ImageFailDialog(url, appViewModel = appViewModel)
         }
     }
 }

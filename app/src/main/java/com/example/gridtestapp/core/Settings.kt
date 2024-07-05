@@ -2,7 +2,7 @@ package com.example.gridtestapp.core
 
 object Settings {
 
-    val previewPreload: Float = 0.5f
-    val originalPreloadOffset: Int = 4
+    const val PREVIEW_PRELOAD: Float = 0.5f
+    const val ORIGINAL_PRELOAD_OFFSET: Int = 4
 
 }

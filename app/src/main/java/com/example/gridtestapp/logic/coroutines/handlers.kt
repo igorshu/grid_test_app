@@ -35,7 +35,7 @@ fun imageExceptionHandler(
                 is ImageLoadException -> {
                     val (errorMessage, canBeLoad) = if (throwable.innerException == null) {
                         Log.e("Error", """Unable to load ${throwable.url} because "${throwable.message}" """)
-                        throwable.message!! to throwable.validUrl
+                        (throwable.message ?: "Неизвестная ошибка") to throwable.validUrl
                     } else {
                         Log.e("Error", """Unable to load ${throwable.url} with exception ${throwable.innerException} (${throwable.localizedMessage}) """)
                         val canBeLoad = when (throwable.innerException) {

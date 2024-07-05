@@ -32,32 +32,33 @@ class NotificationsManager(application: Application) {
     private var notificationManager: NotificationManager = application.getSystemService(NotificationManager::class.java)
 
     fun showAppNotification() {
-        notificationManager.notify(NOTIFICATION_ID, builder
-            .setTimeoutAfter(0)
-            .setContentText("This is our notification!")
-            .setStyle(null)
-            .build())
+        builder.apply {
+            setTimeoutAfter(0)
+            setContentText("This is our notification!")
+            setStyle(null)
+            notificationManager.notify(NOTIFICATION_ID, build())
+        }
     }
 
     fun showImageNotification(bitmap: Bitmap?, url: String) {
-        builder
-            .setTimeoutAfter(0)
-            .setContentText(url)
-            .setStyle(
+        builder.apply {
+            setTimeoutAfter(0)
+            setContentText(url)
+            setStyle(
                 NotificationCompat
                     .BigPictureStyle()
                     .bigPicture(bitmap)
-                    .bigLargeIcon(null as Bitmap?)
-            )
-
-        notificationManager.notify(NOTIFICATION_ID, builder.build())
+                    .bigLargeIcon(null as Bitmap?))
+            notificationManager.notify(NOTIFICATION_ID, build())
+        }
     }
 
     fun hideNotification() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder.setTimeoutAfter(5_000)
-
-            notificationManager.notify(NOTIFICATION_ID, builder.build())
+            builder.apply {
+                setTimeoutAfter(5_000)
+                notificationManager.notify(NOTIFICATION_ID, build())
+            }
         } else {
             cancelNotifications()
         }
@@ -91,10 +92,13 @@ class NotificationsManager(application: Application) {
     }
 
     fun showResumeNotification() {
-        notificationManager.cancel(NOTIFICATION_ID)
-        notificationManager.notify(NOTIFICATION_ID, builder
-            .setTimeoutAfter(0)
-            .build())
+        notificationManager.apply {
+            cancel(NOTIFICATION_ID)
+            notify(NOTIFICATION_ID, builder.run {
+                setTimeoutAfter(0)
+                build()
+            })
+        }
     }
 
     companion object {

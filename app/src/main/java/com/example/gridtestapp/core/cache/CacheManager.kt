@@ -46,13 +46,16 @@ object CacheManager: KoinComponent {
     private lateinit var previewFileDir: File // Директория для хранения превью
 
     fun init(context: Context) {
-        val cacheDir = context.cacheDir.path
-
-        originalFileDir = File("$cacheDir/$ORIGINAL_DIRECTORY")
-        previewFileDir = File("$cacheDir/$PREVIEW_DIRECTORY")
-
-        originalFileDir.mkdir()
-        previewFileDir.mkdir()
+        context.cacheDir.path.also { cacheDir ->
+            File(cacheDir, ORIGINAL_DIRECTORY).apply {
+                originalFileDir = this
+                mkdirs()
+            }
+            File(cacheDir, PREVIEW_DIRECTORY).apply {
+                previewFileDir = this
+                mkdirs()
+            }
+        }
     }
 
     // Загружаем картинку из интернета и сохраняем в двух экземплярах
@@ -85,7 +88,7 @@ object CacheManager: KoinComponent {
                 return@suspendCancellableCoroutine
             }
 
-            val inputStream = response.body!!.byteStream()
+            val inputStream = response.body?.byteStream()
             val bitmap = BitmapFactory.decodeStream(inputStream)
             response.close()
 
@@ -158,9 +161,9 @@ object CacheManager: KoinComponent {
 
     // Большая картинка
 
-    fun originalImageBitmap(url: String) : ImageBitmap {
+    fun originalImageBitmap(url: String) : ImageBitmap? {
         val filePath = urlToOriginalPath(url)
-        return getImageBitmap(filePath.path)!!
+        return getImageBitmap(filePath.path)
     }
 
     // Картинка-превью
@@ -187,7 +190,7 @@ object CacheManager: KoinComponent {
 
     private fun urlToFilename(url: String): String {
         val uri = Uri.parse(url)
-        return "${uri.host}_${uri.pathSegments.joinToString("_")}" + if (uri.query != null) "_${uri.query!!.replace(":", "_")}" else ""
+        return "${uri.host}_${uri.pathSegments.joinToString("_")}_" + (uri.query?.replace(":", "_") ?: "")
     }
 
     private fun urlToOriginalPath(url: String): File = File(originalFileDir, urlToFilename(url))

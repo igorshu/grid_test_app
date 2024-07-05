@@ -79,21 +79,30 @@ class ImageViewModel(
         viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
             if (CacheManager.isCached(url)) {
                 val bitmap = CacheManager.originalImageBitmap(url)
-                _state.update {
-                    MemoryManager.addOriginalBitmap(url, bitmap)
+                if (bitmap != null) {
+                    _state.update {
+                        MemoryManager.addOriginalBitmap(url, bitmap)
 
-                    val originalUrlStates = it.originalUrlStates.toMutableMap()
-                    originalUrlStates[url] = LoadState.LOADED
+                        val originalUrlStates = it.originalUrlStates.toMutableMap()
+                        originalUrlStates[url] = LoadState.LOADED
 
-                    urls.filterIndexed() { i, url ->
-                        i < index - Settings.originalPreloadOffset || i > index + Settings.originalPreloadOffset
+                        urls.filterIndexed() { i, url ->
+                            i < index - Settings.ORIGINAL_PRELOAD_OFFSET || i > index + Settings.ORIGINAL_PRELOAD_OFFSET
+                        }
+                        .forEach { url ->
+                            MemoryManager.removeOriginalBitmap(url)
+                            originalUrlStates[url] = LoadState.IDLE
+                        }
+
+                        it.copy(originalUrlStates = originalUrlStates)
                     }
-                    .forEach { url ->
-                        MemoryManager.removeOriginalBitmap(url)
-                        originalUrlStates[url] = LoadState.IDLE
-                    }
+                } else {
+                    _state.update {
+                        val originalUrlStates = it.originalUrlStates.toMutableMap()
+                        originalUrlStates[url] = LoadState.FAIL
 
-                    it.copy(originalUrlStates = originalUrlStates)
+                        it.copy(originalUrlStates = originalUrlStates)
+                    }
                 }
             } else {
                 _state.update {
@@ -102,10 +111,19 @@ class ImageViewModel(
                 }
                 if (CacheManager.loadImage(url)) {
                     val bitmap = CacheManager.originalImageBitmap(url)
-                    MemoryManager.addOriginalBitmap(url, bitmap)
-                    _state.update {
-                        val originalUrlStates = it.originalUrlStates.toMutableMap().apply { put(url, LoadState.LOADED) }
-                        it.copy(originalUrlStates = originalUrlStates)
+                    if (bitmap != null) {
+                        MemoryManager.addOriginalBitmap(url, bitmap)
+                        _state.update {
+                            val originalUrlStates = it.originalUrlStates.toMutableMap().apply { put(url, LoadState.LOADED) }
+                            it.copy(originalUrlStates = originalUrlStates)
+                        }
+                    }  else {
+                        _state.update {
+                            val originalUrlStates = it.originalUrlStates.toMutableMap()
+                            originalUrlStates[url] = LoadState.FAIL
+
+                            it.copy(originalUrlStates = originalUrlStates)
+                        }
                     }
                 }
             }

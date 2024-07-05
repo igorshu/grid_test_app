@@ -50,11 +50,9 @@ import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
 import com.example.gridtestapp.logic.events.LoadImageAgain
-import com.example.gridtestapp.logic.events.OnAppEvent
 import com.example.gridtestapp.logic.events.ShowImageFailDialog
 import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
 import com.example.gridtestapp.logic.states.LoadState
-import com.example.gridtestapp.logic.states.Theme
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.logic.viewmodels.MainViewModel
 import com.example.gridtestapp.ui.navigation.Routes
@@ -93,7 +91,7 @@ fun MainContent(
             }
         }
 
-        ToggleButtons()
+        ToggleButtons(appViewModel = appViewModel)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -103,7 +101,7 @@ fun MainContent(
             if (urls.isEmpty()) {
                 Loader()
             } else {
-                ImageGrid { url, index ->
+                ImageGrid(appViewModel = appViewModel) { url, index ->
                     if (!routes.isImage()) {
                         routes.navigate(Routes.imageRoute(url, index))
                     }
@@ -179,7 +177,7 @@ fun ImageGrid(
     val gridState = rememberLazyGridState()
 
     LaunchedEffect(gridState) {
-        gridState.layoutInfo.visibleItemsInfo.getOrNull(0)?.let {
+        gridState.layoutInfo.visibleItemsInfo.firstOrNull()?.let {
             mainViewModel.onEvent(UpdateImageWidthEvent(width = it.size.width))
         }
     }
@@ -226,11 +224,11 @@ fun ImageGrid(
                 }
                 LoadState.IDLE,
                 LoadState.LOADING -> { ImageLoader() }
-                LoadState.FAIL -> { FailBox(url) }
+                LoadState.FAIL -> { FailBox(url, appViewModel = appViewModel) }
                 else -> {}
             }
 
-            ImageFailDialog(url)
+            ImageFailDialog(url, appViewModel = appViewModel)
         }
     }
 }

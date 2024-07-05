@@ -9,6 +9,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import arrow.core.None
 import arrow.core.Option
+import com.example.gridtestapp.R
 import com.example.gridtestapp.core.connection.ConnectionManager
 import com.example.gridtestapp.core.NotificationsManager
 import com.example.gridtestapp.core.Settings
@@ -114,7 +115,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             .build()
 
         val txt = OkHttpClient().newCall(request).execute().use {
-                response -> return@use response.body!!.string()
+            response -> return@use response.body?.string() ?: throw Exception(application.getString(R.string.empty_answer))
         }
 
         val lines = txt.lines()
@@ -183,7 +184,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         }
 
         val screenRange = indexesOnScreen.first()..indexesOnScreen.last()
-        val preloadOffset = (indexesOnScreen.size * Settings.previewPreload / 2).roundToInt()
+        val preloadOffset = (indexesOnScreen.size * Settings.PREVIEW_PRELOAD / 2).roundToInt()
         val preloadRange = max(0, indexesOnScreen.first() - preloadOffset)..min(state.value.urls.size - 1, indexesOnScreen.last() + preloadOffset)
 
         val outerUrls = state.value.urls.filterIndexed {index, _ ->
