@@ -32,7 +32,8 @@ data class AppState internal constructor (
     val showSystemBars: Boolean,
     val title: String,
     val currentScreen: Screen,
-    val shareUrl: String?
+    val currentImageUrl: String?,
+    val deletingImage: Boolean
 ) {
     companion object {
         fun init(title: String): AppState = AppState(
@@ -49,7 +50,8 @@ data class AppState internal constructor (
             showSystemBars = true,
             title = title,
             currentScreen = Screen.MAIN,
-            shareUrl = null
+            currentImageUrl = null,
+            deletingImage = false,
         )
     }
 

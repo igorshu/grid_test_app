@@ -3,6 +3,7 @@ package com.example.gridtestapp.ui.composables
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.LayoutDirection
 import com.example.gridtestapp.logic.events.Reload
+import com.example.gridtestapp.logic.events.RemoveImage
 import com.example.gridtestapp.logic.events.SharePressed
 import com.example.gridtestapp.logic.states.Screen
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
@@ -97,7 +99,22 @@ fun TopBar(
                         }
                     }
                     Screen.IMAGE -> {
-                        IconButton(onClick = { appViewModel.onEvent(SharePressed) }) {
+                        IconButton(onClick = {
+                            appState.value.currentImageUrl?.let { url ->
+                                appViewModel.onEvent(RemoveImage(url))
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = "Delete",
+                                tint = Color.White
+                            )
+                        }
+                        IconButton(onClick = {
+                            appState.value.currentImageUrl?.let { url ->
+                                appViewModel.onEvent(SharePressed(url))
+                            }
+                        }) {
                             Icon(
                                 imageVector = Icons.Filled.Share,
                                 contentDescription = "Share",

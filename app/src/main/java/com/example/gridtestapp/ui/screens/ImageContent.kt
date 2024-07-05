@@ -25,6 +25,7 @@ import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
 import com.example.gridtestapp.logic.events.ShowImageNotification
 import com.example.gridtestapp.logic.events.ToggleFullScreen
+import com.example.gridtestapp.logic.events.UpdateCurrentImageUrl
 import com.example.gridtestapp.logic.states.LoadState.FAIL
 import com.example.gridtestapp.logic.states.LoadState.LOADED
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
@@ -66,71 +67,75 @@ fun ImageContent(
             .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
-        val pagerState = rememberPagerState(
-            initialPage = imageState.value.index,
-            pageCount = { urls.size }
-        )
 
-        HorizontalPager(state = pagerState) { index ->
-            val url = urls[index]
+        if (!appState.value.deletingImage) {
+            val pagerState = rememberPagerState(
+                initialPage = imageState.value.index,
+                pageCount = { urls.size }
+            )
 
-            val urlState = imageState.value.originalUrlStates[url]
+            HorizontalPager(state = pagerState) { index ->
+                val url = urls[index]
 
-            LaunchedEffect(key1 = pagerState, key2 = urlState) {
-                snapshotFlow { pagerState.settledPage }.collect { page ->
-                    val url = urls[page]
-                    imageViewModel.onEvent(ShowImageNotification(url))
+                val urlState = imageState.value.originalUrlStates[url]
+
+                LaunchedEffect(key1 = pagerState, key2 = urlState) {
+                    snapshotFlow { pagerState.settledPage }.collect { page ->
+                        val url = urls[page]
+                        imageViewModel.onEvent(ShowImageNotification(url))
+                        appViewModel.onEvent(UpdateCurrentImageUrl(url))
+                    }
                 }
-            }
 
-            if (urlState == LOADED) {
-                val originalImage = remember {
-                    MemoryManager.getOriginalBitmap(url)
-                }
-                val interactionSource = remember { MutableInteractionSource() }
+                if (urlState == LOADED) {
+                    val originalImage = remember {
+                        MemoryManager.getOriginalBitmap(url)
+                    }
+                    val interactionSource = remember { MutableInteractionSource() }
 
-                if (originalImage != null) {
-                    val painter = BitmapPainter(originalImage)
-                    val routes = get<Routes>()
-                    val zoomState = rememberZoomState(
-                        minScale = 0.011f,
-                        maxScale = 10f,
-                        exitScale = 0.6f,
-                        onExit = routes::goBack,
-                    )
-                    Image(
-                        painter = painter,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable(
-                                interactionSource,
-                                indication = null,
-                            ) {
-                                appViewModel.onEvent(ToggleFullScreen)
+                    if (originalImage != null) {
+                        val painter = BitmapPainter(originalImage)
+                        val routes = get<Routes>()
+                        val zoomState = rememberZoomState(
+                            minScale = 0.011f,
+                            maxScale = 10f,
+                            exitScale = 0.6f,
+                            onExit = routes::goBack,
+                        )
+                        Image(
+                            painter = painter,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clickable(
+                                    interactionSource,
+                                    indication = null,
+                                ) {
+                                    appViewModel.onEvent(ToggleFullScreen)
+                                }
+                                .zoomable(zoomState)
+                        )
+                    } else {
+                        Box(modifier = Modifier.aspectRatio(1.0f)) {}
+                    }
+                } else {
+                    val urlState = appState.value.previewUrlStates[url]
+                    if (urlState == FAIL) {
+                        FailBox(url, appViewModel = appViewModel)
+                    } else {
+                        Box(
+                            modifier = Modifier.aspectRatio(1.0f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
+                            LaunchedEffect(key1 = url) {
+                                imageViewModel.onEvent(LoadOriginalImageFromDisk(url, index))
                             }
-                            .zoomable(zoomState)
-                    )
-                } else {
-                    Box(modifier = Modifier.aspectRatio(1.0f)) {}
-                }
-            } else {
-                val urlState = appState.value.previewUrlStates[url]
-                if (urlState == FAIL) {
-                    FailBox(url, appViewModel = appViewModel)
-                } else {
-                    Box(
-                        modifier = Modifier.aspectRatio(1.0f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
-                        LaunchedEffect(key1 = url) {
-                            imageViewModel.onEvent(LoadOriginalImageFromDisk(url, index))
                         }
                     }
                 }
+                ImageFailDialog(url, appViewModel = appViewModel)
             }
-            ImageFailDialog(url, appViewModel = appViewModel)
         }
     }
 }

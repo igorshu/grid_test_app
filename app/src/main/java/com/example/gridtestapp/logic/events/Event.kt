@@ -8,7 +8,8 @@ package com.example.gridtestapp.logic.events
 
 sealed class AppEvent
 data object ToggleFullScreen : AppEvent()
-data object SharePressed : AppEvent()
+data class SharePressed(val url: String) : AppEvent()
+data class RemoveImage(val url: String) : AppEvent()
 data object MainScreenEvent : AppEvent()
 data class ImageScreenEvent(val url: String) : AppEvent()
 data class ShowImageFailDialog(val url: String) : AppEvent()
@@ -19,6 +20,7 @@ data object AppResumed : AppEvent()
 data object AppPaused : AppEvent()
 data class ChangeTheme(val index: Int) : AppEvent()
 data object Reload : AppEvent()
+data class UpdateCurrentImageUrl(val url: String) : AppEvent()
 
 
 // События основного экрана

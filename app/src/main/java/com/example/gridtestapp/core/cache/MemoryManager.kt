@@ -51,6 +51,11 @@ object MemoryManager {
 
     /* --- Common --- */
 
+    fun removeBothImages(url: String) {
+        previews.remove(url)
+        original.remove(url)
+    }
+
     fun clearAll() {
         previews.clear()
         original.clear()

@@ -66,7 +66,10 @@ class MainActivity : ComponentActivity() {
                     if (destination.route == MAIN) {
                         appViewModel.onEvent(MainScreenEvent)
                     } else if (destination.route == IMAGE) {
-                        appViewModel.onEvent(ImageScreenEvent(url = arguments?.getString("url") ?: ""))
+                        val url = arguments?.getString("url")
+                        url?.let {
+                            appViewModel.onEvent(ImageScreenEvent(url = url))
+                        }
                     }
                 }
                 navController.addOnDestinationChangedListener(listener)

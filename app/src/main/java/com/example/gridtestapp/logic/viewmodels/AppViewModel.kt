@@ -37,7 +37,10 @@ import com.example.gridtestapp.core.cache.CacheManager
 import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.logic.events.Reload
+import com.example.gridtestapp.logic.events.RemoveImage
+import com.example.gridtestapp.logic.events.UpdateCurrentImageUrl
 import com.example.gridtestapp.logic.states.Theme
+import com.example.gridtestapp.ui.navigation.Routes
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -54,6 +57,7 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 import org.koin.dsl.module
 import org.koin.core.component.inject
 import kotlin.math.max
@@ -252,7 +256,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                         showSystemBars = true,
                         title = appName,
                         showBack = false,
-                        currentScreen = Screen.MAIN
+                        currentScreen = Screen.MAIN,
                     )
                 }
                 notificationsManager.showAppNotification()
@@ -261,11 +265,13 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 it.copy(showTopBar = true,
                     showSystemBars = true,
                     title = event.url,
-                    shareUrl = event.url,
+                    currentImageUrl = event.url,
                     showBack = true,
-                    currentScreen = Screen.IMAGE)
+                    deletingImage = false,
+                    currentScreen = Screen.IMAGE,
+                )
             }
-            is SharePressed -> shareUrl()
+            is SharePressed -> shareUrl(event.url)
             is ShowImageFailDialog ->  _state.update {  it.copy(showImageFailDialog = Option(event.url)) }
             is DismissImageFailDialog -> _state.update {  it.copy(showImageFailDialog = None) }
             is LoadImageAgain -> {
@@ -290,6 +296,28 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is AppPaused -> notificationsManager.hideNotification()
             is ChangeTheme -> _state.update { it.copy(theme = Theme.entries[event.index]) }
             is Reload -> reload()
+            is RemoveImage -> removeImage(event.url)
+            is UpdateCurrentImageUrl -> _state.update { it.copy(currentImageUrl = event.url) }
+        }
+    }
+
+    private fun removeImage(url: String) {
+        viewModelScope.launch(handler + Dispatchers.IO) {
+            MemoryManager.removeBothImages(url)
+            CacheManager.removeBothImages(url)
+            _state.update {
+                val urls = it.urls.toMutableList().apply { remove(url) }
+                val previewUrlStates = it.previewUrlStates.toMutableMap().apply { remove(url) }
+                it.copy(
+                    urls = urls,
+                    previewUrlStates = previewUrlStates,
+                    deletingImage = true,
+                )
+            }
+
+            viewModelScope.launch(handler + Dispatchers.Main) {
+                get<Routes>().navigate(Routes.MAIN)
+            }
         }
     }
 
@@ -303,9 +331,9 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         }
     }
 
-    private fun shareUrl() {
+    private fun shareUrl(url: String) {
         val shareIntent = Intent(Intent.ACTION_SEND)
-        shareIntent.putExtra(Intent.EXTRA_TEXT, state.value.shareUrl)
+        shareIntent.putExtra(Intent.EXTRA_TEXT, url)
         shareIntent.setType("text/plain")
         shareIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         application.startActivity(shareIntent)
