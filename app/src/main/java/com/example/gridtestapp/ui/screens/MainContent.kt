@@ -31,6 +31,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,7 +64,6 @@ import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.robertlevonyan.compose.buttontogglegroup.RowToggleButtonGroup
 import org.koin.androidx.compose.get
-import org.koin.androidx.compose.koinViewModel
 
 /*
 *
@@ -73,7 +73,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun MainContent(
     paddingValues: PaddingValues,
-    appViewModel: AppViewModel = koinViewModel(),
+    appViewModel: AppViewModel = get(),
 ) {
     val appState = appViewModel.state.collectAsState()
 
@@ -155,8 +155,8 @@ fun ToggleButtons(theme: Theme, onAppEvent: OnAppEvent) {
 
 @Composable
 fun ImageGrid(
-    appViewModel: AppViewModel = koinViewModel(),
-    mainViewModel: MainViewModel = koinViewModel(),
+    appViewModel: AppViewModel = get(),
+    mainViewModel: MainViewModel = get(),
     toImageScreen: (url: String, index: Int,
 ) -> Unit) {
 
@@ -228,7 +228,7 @@ fun ImageGrid(
 @Composable
 fun FailBox(
     url: String,
-    appViewModel: AppViewModel = koinViewModel()
+    appViewModel: AppViewModel = get()
 ) {
     Box(
         modifier = Modifier
@@ -244,7 +244,7 @@ fun FailBox(
 @OptIn(ExperimentalMaterial3Api::class)
 fun ImageFailDialog(
     url: String,
-    appViewModel: AppViewModel = koinViewModel()
+    appViewModel: AppViewModel = get()
 ) {
     val appState = appViewModel.state.collectAsState()
 

@@ -49,7 +49,7 @@ fun ImageContent(
     index: Int,
     url: String,
     urls: List<String>,
-    appViewModel: AppViewModel = koinViewModel(),
+    appViewModel: AppViewModel = get(),
     imageViewModel: ImageViewModel = koinViewModel(parameters = { parametersOf(urls, index, url) })
 ) {
 
