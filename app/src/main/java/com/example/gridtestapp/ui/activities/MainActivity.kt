@@ -105,22 +105,26 @@ class MainActivity : ComponentActivity() {
                             MainContent(paddingValues, appViewModel = appViewModel)
                         }
                         composable(Routes.IMAGE) { backStackEntry ->
-                            val url = backStackEntry.arguments?.getString("url")
-                            val index = backStackEntry.arguments?.getString("index")?.toInt()
+                            backStackEntry.arguments?.let { arguments ->
+                                val url = arguments.getString("url")
+                                val index = arguments.getString("index")?.toInt()
 
-                            if (url != null && index != null) {
-                                ImageContent(index, url, appState.value.urls, appViewModel = appViewModel)
-                            } else {
-                                val params = mutableListOf<String>()
-                                    .apply {
-                                        url ?: add("url")
-                                        index ?: add("index")
-                                    }
-                                    .joinToString(", ")
-                                val errorText = getString(R.string.missing_arguments_s, params)
+                                if (url != null && index != null) {
+                                    ImageContent(index, url, appState.value.urls, appViewModel = appViewModel)
+                                } else {
+                                    val params = mutableListOf<String>()
+                                        .apply {
+                                            url ?: add("url")
+                                            index ?: add("index")
+                                        }
+                                        .joinToString(", ")
+                                    val errorText = getString(R.string.missing_arguments_s, params)
+                                    Toast.makeText(applicationContext, errorText, Toast.LENGTH_LONG).show()
+                                }
+                            } ?: run {
+                                val errorText = getString(R.string.missing_arguments_s, "url and index")
                                 Toast.makeText(applicationContext, errorText, Toast.LENGTH_LONG).show()
                             }
-
                         }
                     }
                 }

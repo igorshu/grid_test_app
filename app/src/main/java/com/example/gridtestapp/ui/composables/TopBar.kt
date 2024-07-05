@@ -35,7 +35,10 @@ fun TopBar(
 ) {
     val appState = appViewModel.state.collectAsState()
 
-    val initialTop = TopAppBarDefaults.windowInsets.getTop(LocalDensity.current)
+    val windowInsets = TopAppBarDefaults.windowInsets
+    val density = LocalDensity.current
+
+    val initialTop = windowInsets.getTop(density)
     val top = remember { initialTop}
 
     val showTopBar by remember {
@@ -45,11 +48,12 @@ fun TopBar(
     }
 
     if (showTopBar) {
+        val layoutDirection = LayoutDirection.Ltr
         val insets = WindowInsets(
-            left = TopAppBarDefaults.windowInsets.getLeft(LocalDensity.current, LayoutDirection.Ltr),
+            left = windowInsets.getLeft(density, layoutDirection),
             top = top,
-            right = TopAppBarDefaults.windowInsets.getRight(LocalDensity.current, LayoutDirection.Ltr),
-            bottom = TopAppBarDefaults.windowInsets.getBottom(LocalDensity.current),
+            right = windowInsets.getRight(density, layoutDirection),
+            bottom = windowInsets.getBottom(density),
             )
         TopAppBar(
             modifier = Modifier,
