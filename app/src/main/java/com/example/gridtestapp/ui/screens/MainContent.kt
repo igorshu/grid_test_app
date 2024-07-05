@@ -87,22 +87,23 @@ fun MainContent(
             .fillMaxSize()
             .padding(paddingValues)
     ) {
-        val theme = remember {
+        val urls by remember {
             derivedStateOf {
-                appState.value.theme
+                appState.value.urls
             }
         }
-        ToggleButtons(theme.value, appViewModel.onEvent)
+
+        ToggleButtons()
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            if (appState.value.urls.isEmpty()) {
+            if (urls.isEmpty()) {
                 Loader()
             } else {
-                ImageGrid() { url, index ->
+                ImageGrid { url, index ->
                     if (!routes.isImage()) {
                         routes.navigate(Routes.imageRoute(url, index))
                     }
@@ -113,9 +114,18 @@ fun MainContent(
 }
 
 @Composable
-fun ToggleButtons(theme: Theme, onAppEvent: OnAppEvent) {
+fun ToggleButtons(
+    appViewModel: AppViewModel = get()
+) {
+    val appState = appViewModel.state.collectAsState()
+
     val primarySelection = remember {
-        theme
+        appState.value.theme
+    }
+    val theme by remember {
+        derivedStateOf {
+            appState.value.theme
+        }
     }
 
     val context = LocalContext.current
@@ -148,7 +158,7 @@ fun ToggleButtons(theme: Theme, onAppEvent: OnAppEvent) {
         selectedContentColor = selectedContentColor,
         unselectedContentColor = unselectedContentColor,
     ) { index ->
-        onAppEvent(ChangeTheme(index + if (buttonTexts.size == 3) 0 else 1))
+        appViewModel.onEvent(ChangeTheme(index + if (buttonTexts.size == 3) 0 else 1))
     }
 }
 

@@ -13,30 +13,38 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.LayoutDirection
-import com.example.gridtestapp.logic.events.OnAppEvent
 import com.example.gridtestapp.logic.events.Reload
 import com.example.gridtestapp.logic.events.SharePressed
-import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.Screen
+import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.ui.navigation.Routes
+import org.koin.androidx.compose.get
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(
-    appState: AppState,
-    routes: Routes,
-    onAppEvent: OnAppEvent,
+    appViewModel: AppViewModel = get()
 ) {
+    val appState = appViewModel.state.collectAsState()
+
     val initialTop = TopAppBarDefaults.windowInsets.getTop(LocalDensity.current)
     val top = remember { initialTop}
 
-    if (appState.showTopBar) {
+    val showTopBar by remember {
+        derivedStateOf {
+            appState.value.showTopBar
+        }
+    }
 
+    if (showTopBar) {
         val insets = WindowInsets(
             left = TopAppBarDefaults.windowInsets.getLeft(LocalDensity.current, LayoutDirection.Ltr),
             top = top,
@@ -51,9 +59,15 @@ fun TopBar(
                 titleContentColor = Color.White,
                 containerColor = MaterialTheme.colorScheme.tertiary,
             ),
-            title = { Text(appState.title, maxLines = 1) },
+            title = { Text(appState.value.title, maxLines = 1) },
             navigationIcon = {
-                if (appState.showBack) {
+                val showBack by remember {
+                    derivedStateOf {
+                        appState.value.showBack
+                    }
+                }
+                if (showBack) {
+                    val routes = get<Routes>()
                     IconButton(onClick = { routes.goBack() }) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,
@@ -63,21 +77,29 @@ fun TopBar(
                 }
             },
             actions = {
-                if (appState.currentScreen == Screen.MAIN) {
-                    IconButton(onClick = { onAppEvent(Reload) }) {
-                        Icon(
-                            imageVector = Icons.Filled.Refresh,
-                            contentDescription = "Share",
-                            tint = Color.White
-                        )
+                val currentScreen by remember {
+                    derivedStateOf {
+                        appState.value.currentScreen
                     }
-                } else if (appState.currentScreen == Screen.IMAGE) {
-                    IconButton(onClick = { onAppEvent(SharePressed) }) {
-                        Icon(
-                            imageVector = Icons.Filled.Share,
-                            contentDescription = "Share",
-                            tint = Color.White
-                        )
+                }
+                when (currentScreen) {
+                    Screen.MAIN -> {
+                        IconButton(onClick = { appViewModel.onEvent(Reload) }) {
+                            Icon(
+                                imageVector = Icons.Filled.Refresh,
+                                contentDescription = "Share",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                    Screen.IMAGE -> {
+                        IconButton(onClick = { appViewModel.onEvent(SharePressed) }) {
+                            Icon(
+                                imageVector = Icons.Filled.Share,
+                                contentDescription = "Share",
+                                tint = Color.White
+                            )
+                        }
                     }
                 }
             }

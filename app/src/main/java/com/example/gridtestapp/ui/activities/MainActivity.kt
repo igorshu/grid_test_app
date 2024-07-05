@@ -35,10 +35,12 @@ import com.example.gridtestapp.ui.screens.MainContent
 import com.example.gridtestapp.ui.theme.GridTestAppTheme
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.get
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
 
     private val notificationsManager: NotificationsManager by inject()
+    private val appViewModel: AppViewModel by viewModel()
 
     private fun addCallBackDispatcher() {
         onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
@@ -58,7 +60,6 @@ class MainActivity : ComponentActivity() {
         notificationsManager.createNotificationChannel()
 
         setContent {
-            val appViewModel = get<AppViewModel>()
             val navController = rememberNavController()
             remember {
                 val listener = OnDestinationChangedListener { controller, destination, arguments ->
@@ -71,7 +72,7 @@ class MainActivity : ComponentActivity() {
                 navController.addOnDestinationChangedListener(listener)
                 listener
             }
-            val appState = get<AppViewModel>().state.collectAsState()
+            val appState = appViewModel.state.collectAsState()
 
             val theme by remember {
                 derivedStateOf {
@@ -85,7 +86,7 @@ class MainActivity : ComponentActivity() {
                 darkTheme = theme.isDark(systemTheme = isSystemInDarkTheme())
             ) {
                 Scaffold(
-                    topBar = { TopBar(appState.value, get<Routes>(), get<AppViewModel>().onEvent) },
+                    topBar = { TopBar() },
                 ) { paddingValues ->
 
                     LifecycleResumeEffect(Unit) {
