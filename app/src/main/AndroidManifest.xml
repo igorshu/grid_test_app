@@ -21,15 +21,23 @@
         <activity
             android:name=".ui.activities.MainActivity"
             android:exported="false"
-            android:theme="@style/Theme.GridTestApp"/>
+            android:theme="@style/Theme.GridTestApp"
+            android:launchMode="singleTop"
+            />
         <activity
             android:name=".ui.activities.SplashActivity"
             android:theme="@style/Theme.Splash"
             android:exported="true"
+            android:launchMode="singleInstance"
             >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain"/>
             </intent-filter>
         </activity>
     </application>

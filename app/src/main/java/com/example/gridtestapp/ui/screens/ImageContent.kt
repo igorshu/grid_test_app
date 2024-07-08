@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -77,15 +76,13 @@ fun ImageContent(
             HorizontalPager(state = pagerState) { index ->
                 val url = urls[index]
 
-                val urlState = imageState.value.originalUrlStates[url]
-
-                LaunchedEffect(key1 = pagerState, key2 = urlState) {
-                    snapshotFlow { pagerState.settledPage }.collect { page ->
-                        val url = urls[page]
-                        imageViewModel.onEvent(ShowImageNotification(url))
-                        appViewModel.onEvent(UpdateCurrentImageUrl(url))
-                    }
+                LaunchedEffect(key1 = index) {
+                    val currentUrl = urls[pagerState.settledPage]
+                    imageViewModel.onEvent(ShowImageNotification(currentUrl))
+                    appViewModel.onEvent(UpdateCurrentImageUrl(currentUrl, index))
                 }
+
+                val urlState = imageState.value.originalUrlStates[url]
 
                 if (urlState == LOADED) {
                     val originalImage = remember {

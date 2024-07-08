@@ -189,7 +189,7 @@ fun ImageGrid(
     ) {
         itemsIndexed(
             appState.value.urls.toList(),
-            key = { _, url -> url }
+            key = { index, url -> "$index. $url" }
         ) { index, url ->
 
             LaunchedEffect(index) {

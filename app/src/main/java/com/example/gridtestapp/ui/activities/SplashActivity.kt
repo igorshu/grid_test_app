@@ -32,6 +32,10 @@ import kotlinx.coroutines.launch
 @SuppressLint("CustomSplashScreen")
 class SplashActivity: ComponentActivity() {
 
+    companion object {
+        const val ADD_URL = "Add.Url"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -40,8 +44,7 @@ class SplashActivity: ComponentActivity() {
                 systemUiVisibility = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_FULLSCREEN
             }
         } else {
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
+            startMainActivity()
         }
 
         setContent {
@@ -51,8 +54,7 @@ class SplashActivity: ComponentActivity() {
             LaunchedEffect(key1 = 1) {
                 scope.launch {
                     delay(1000)
-                    context.startActivity(Intent(context, MainActivity::class.java))
-                    finish()
+                    startMainActivity()
                 }
             }
 
@@ -78,6 +80,17 @@ class SplashActivity: ComponentActivity() {
                 )
             }
         }
+    }
+
+    private fun startMainActivity() {
+        val startIntent = Intent(this, MainActivity::class.java)
+        intent.let {
+            if (it.action == Intent.ACTION_SEND && it.type?.startsWith("text/") == true) {
+                startIntent.putExtra(ADD_URL, it.getStringExtra(Intent.EXTRA_TEXT))
+            }
+        }
+        startActivity(startIntent)
+        finish()
     }
 
     private fun iconColor(black: Boolean): Color = when {

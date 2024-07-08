@@ -20,6 +20,7 @@ import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.core.cache.CacheManager
 import com.example.gridtestapp.core.cache.MemoryManager
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -67,7 +68,7 @@ class ImageViewModel(
                 loadOriginalImageFromDisk(event.index, event.url)
             }
             is ShowImageNotification -> {
-                viewModelScope.launch(handler) {
+                viewModelScope.launch(handler + Dispatchers.Default) {
                     val imageBitmap = MemoryManager.getOriginalBitmap(event.url)
                     notificationsManager.showImageNotification(imageBitmap?.asAndroidBitmap(), event.url)
                 }
@@ -81,11 +82,8 @@ class ImageViewModel(
                 val bitmap = CacheManager.originalImageBitmap(url)
                 if (bitmap != null) {
                     _state.update {
-                        MemoryManager.addOriginalBitmap(url, bitmap)
 
                         val originalUrlStates = it.originalUrlStates.toMutableMap()
-                        originalUrlStates[url] = LoadState.LOADED
-
                         urls.filterIndexed() { i, url ->
                             i < index - Settings.ORIGINAL_PRELOAD_OFFSET || i > index + Settings.ORIGINAL_PRELOAD_OFFSET
                         }
@@ -93,6 +91,9 @@ class ImageViewModel(
                             MemoryManager.removeOriginalBitmap(url)
                             originalUrlStates[url] = LoadState.IDLE
                         }
+
+                        MemoryManager.addOriginalBitmap(url, bitmap)
+                        originalUrlStates[url] = LoadState.LOADED
 
                         it.copy(originalUrlStates = originalUrlStates)
                     }

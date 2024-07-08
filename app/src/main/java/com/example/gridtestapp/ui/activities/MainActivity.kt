@@ -1,5 +1,6 @@
 package com.example.gridtestapp.ui.activities
 
+import android.content.Intent
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Bundle
 import android.widget.Toast
@@ -21,11 +22,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.gridtestapp.R
 import com.example.gridtestapp.core.NotificationsManager
+import com.example.gridtestapp.logic.events.AddImage
 import com.example.gridtestapp.logic.events.AppPaused
 import com.example.gridtestapp.logic.events.AppResumed
 import com.example.gridtestapp.logic.events.ImageScreenEvent
 import com.example.gridtestapp.logic.events.MainScreenEvent
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
+import com.example.gridtestapp.ui.activities.SplashActivity.Companion.ADD_URL
 import com.example.gridtestapp.ui.composables.TopBar
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.navigation.Routes.Companion.IMAGE
@@ -51,6 +54,12 @@ class MainActivity : ComponentActivity() {
         })
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+
+        parseIntent(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -59,6 +68,8 @@ class MainActivity : ComponentActivity() {
 
         notificationsManager.createNotificationChannel()
 
+        parseIntent(intent)
+
         setContent {
             val navController = rememberNavController()
             remember {
@@ -66,9 +77,14 @@ class MainActivity : ComponentActivity() {
                     if (destination.route == MAIN) {
                         appViewModel.onEvent(MainScreenEvent)
                     } else if (destination.route == IMAGE) {
-                        val url = arguments?.getString("url")
-                        url?.let {
-                            appViewModel.onEvent(ImageScreenEvent(url = url))
+                        arguments?.apply {
+                            val url = getString("url")
+                            val index = getString("index")?.toInt()
+                            url?.let {
+                                index?.let {
+                                    appViewModel.onEvent(ImageScreenEvent(url = url, index = index))
+                                }
+                            }
                         }
                     }
                 }
@@ -132,6 +148,12 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun parseIntent(intent: Intent) {
+        intent.getStringExtra(ADD_URL)?.let { url ->
+            appViewModel.onEvent(AddImage(url))
         }
     }
 

@@ -35,6 +35,7 @@ import com.example.gridtestapp.logic.states.MainScreenState
 import com.example.gridtestapp.logic.states.Screen
 import com.example.gridtestapp.core.cache.CacheManager
 import com.example.gridtestapp.core.cache.MemoryManager
+import com.example.gridtestapp.logic.events.AddImage
 import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.logic.events.Reload
 import com.example.gridtestapp.logic.events.RemoveImage
@@ -191,13 +192,18 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         val preloadOffset = (indexesOnScreen.size * Settings.PREVIEW_PRELOAD / 2).roundToInt()
         val preloadRange = max(0, indexesOnScreen.first() - preloadOffset)..min(state.value.urls.size - 1, indexesOnScreen.last() + preloadOffset)
 
-        val outerUrls = state.value.urls.filterIndexed {index, _ ->
+        var outerImageUrls = state.value.urls.filterIndexed { index, url ->
             index !in preloadRange
+        }
+
+        val innerImageUrls = state.value.urls.slice(preloadRange)
+        outerImageUrls = outerImageUrls.filterNot { url ->
+            url in innerImageUrls
         }
 
         _state.update {
             val urlStates = it.previewUrlStates.toMutableMap()
-            outerUrls.forEach { url ->
+            outerImageUrls.forEach { url ->
                 MemoryManager.removePreviewBitmap(url)
 
                 if (urlStates[url] != LoadState.FAIL && urlStates[url] != LoadState.LOADING) {
@@ -265,7 +271,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 it.copy(showTopBar = true,
                     showSystemBars = true,
                     title = event.url,
-                    currentImageUrl = event.url,
+                    currentImage = AppState.ImagePair(event.url, event.index),
                     showBack = true,
                     deletingImage = false,
                     currentScreen = Screen.IMAGE,
@@ -296,23 +302,39 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is AppPaused -> notificationsManager.hideNotification()
             is ChangeTheme -> _state.update { it.copy(theme = Theme.entries[event.index]) }
             is Reload -> reload()
-            is RemoveImage -> removeImage(event.url)
-            is UpdateCurrentImageUrl -> _state.update { it.copy(currentImageUrl = event.url) }
+            is RemoveImage -> removeImage(event.url, event.index)
+            is UpdateCurrentImageUrl -> _state.update { it.copy(currentImage = AppState.ImagePair(event.url, event.index)) }
+            is AddImage -> addImage(event.url)
         }
     }
 
-    private fun removeImage(url: String) {
+    private fun addImage(url: String) {
+        if (state.value.currentScreen == Screen.IMAGE) {
+            get<Routes>().goBack()
+        }
+
+        _state.update {
+            it.copy(urls = it.urls.toMutableList().apply { add(url) })
+        }
+    }
+
+    private fun removeImage(url: String, index: Int) {
         viewModelScope.launch(handler + Dispatchers.IO) {
-            MemoryManager.removeBothImages(url)
-            CacheManager.removeBothImages(url)
-            _state.update {
-                val urls = it.urls.toMutableList().apply { remove(url) }
-                val previewUrlStates = it.previewUrlStates.toMutableMap().apply { remove(url) }
-                it.copy(
-                    urls = urls,
-                    previewUrlStates = previewUrlStates,
-                    deletingImage = true,
-                )
+            val newState = _state.updateAndGet {
+                val urls = it.urls.toMutableList().apply { removeAt(index = index) }
+                it.copy(urls = urls)
+            }
+
+            if (newState.urls.indexOf(url) < 0) {
+                MemoryManager.removeBothImages(url)
+                CacheManager.removeBothImages(url)
+                _state.update {
+                    val previewUrlStates = it.previewUrlStates.toMutableMap().apply { remove(url) }
+                    it.copy(
+                        urls = newState.urls,
+                        previewUrlStates = previewUrlStates,
+                        deletingImage = true)
+                }
             }
 
             viewModelScope.launch(handler + Dispatchers.Main) {
@@ -332,11 +354,12 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     private fun shareUrl(url: String) {
-        val shareIntent = Intent(Intent.ACTION_SEND)
-        shareIntent.putExtra(Intent.EXTRA_TEXT, url)
-        shareIntent.setType("text/plain")
-        shareIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        application.startActivity(shareIntent)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            putExtra(Intent.EXTRA_TEXT, url)
+            type = "text/plain"
+            setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        application.startActivity(intent)
     }
 
     companion object {

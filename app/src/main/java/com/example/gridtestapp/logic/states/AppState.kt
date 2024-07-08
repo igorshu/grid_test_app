@@ -1,7 +1,5 @@
 package com.example.gridtestapp.logic.states
 
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.Composable
 import arrow.core.None
 import arrow.core.Option
 
@@ -32,7 +30,7 @@ data class AppState internal constructor (
     val showSystemBars: Boolean,
     val title: String,
     val currentScreen: Screen,
-    val currentImageUrl: String?,
+    val currentImage: ImagePair?,
     val deletingImage: Boolean
 ) {
     companion object {
@@ -50,7 +48,7 @@ data class AppState internal constructor (
             showSystemBars = true,
             title = title,
             currentScreen = Screen.MAIN,
-            currentImageUrl = null,
+            currentImage = null,
             deletingImage = false,
         )
     }
@@ -64,8 +62,8 @@ data class AppState internal constructor (
         preloadRange = IntRange(0, 0),
     )
 
-    @Composable
-    fun isDark(): Boolean {
-        return theme == Theme.DARK || isSystemInDarkTheme() && theme == Theme.BY_DEFAULT
-    }
+    class ImagePair(
+        val url: String,
+        val index: Int,
+    )
 }

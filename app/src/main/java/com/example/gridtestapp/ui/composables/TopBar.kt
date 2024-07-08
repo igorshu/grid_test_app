@@ -100,8 +100,8 @@ fun TopBar(
                     }
                     Screen.IMAGE -> {
                         IconButton(onClick = {
-                            appState.value.currentImageUrl?.let { url ->
-                                appViewModel.onEvent(RemoveImage(url))
+                            appState.value.currentImage?.let { imagePair ->
+                                appViewModel.onEvent(RemoveImage(imagePair.url, imagePair.index))
                             }
                         }) {
                             Icon(
@@ -111,8 +111,8 @@ fun TopBar(
                             )
                         }
                         IconButton(onClick = {
-                            appState.value.currentImageUrl?.let { url ->
-                                appViewModel.onEvent(SharePressed(url))
+                            appState.value.currentImage?.let { imagePair ->
+                                appViewModel.onEvent(SharePressed(imagePair.url))
                             }
                         }) {
                             Icon(
