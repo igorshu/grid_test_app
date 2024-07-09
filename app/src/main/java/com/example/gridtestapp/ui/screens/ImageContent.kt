@@ -25,6 +25,7 @@ import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
 import com.example.gridtestapp.logic.events.ShowImageNotification
 import com.example.gridtestapp.logic.events.ToggleFullScreen
 import com.example.gridtestapp.logic.events.UpdateCurrentImageUrl
+import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.LoadState.FAIL
 import com.example.gridtestapp.logic.states.LoadState.LOADED
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
@@ -56,10 +57,6 @@ fun ImageContent(
     val imageState = imageViewModel.state.collectAsState()
     val appState = appViewModel.state.collectAsState()
 
-    val systemUiController: SystemUiController = rememberSystemUiController()
-    systemUiController.systemBarsBehavior = BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-    systemUiController.isSystemBarsVisible = appState.value.showSystemBars
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -67,7 +64,7 @@ fun ImageContent(
         contentAlignment = Alignment.Center
     ) {
 
-        if (!appState.value.deletingImage) {
+        if (!appState.value.hideImage) {
             val pagerState = rememberPagerState(
                 initialPage = imageState.value.index,
                 pageCount = { urls.size }

@@ -1,9 +1,10 @@
 package com.example.gridtestapp.ui.navigation
 
 import androidx.navigation.NavHostController
+import com.example.gridtestapp.logic.events.AddImageScreenEvent
 import com.example.gridtestapp.logic.events.ImageScreenEvent
 import com.example.gridtestapp.logic.events.MainScreenEvent
-import com.example.gridtestapp.logic.events.OnAppEvent
+import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import org.koin.dsl.module
 import java.net.URLEncoder
 
@@ -20,6 +21,14 @@ class Routes() {
         navController.navigate(route)
     }
 
+    fun replaceToMain(route: String) {
+        navController.navigate(route) {
+            popUpTo(Routes.MAIN) {
+                inclusive = false
+            }
+        }
+    }
+
     fun setController(navController: NavHostController) {
         this.navController = navController
     }
@@ -30,15 +39,49 @@ class Routes() {
 
     fun isImage() = IMAGE == navController.currentDestination?.route
 
+    fun addListener(appViewModel: AppViewModel, navController: NavHostController):Boolean {
+        navController.addOnDestinationChangedListener { controller, destination, arguments ->
+            when (destination.route) {
+                MAIN -> {
+                    appViewModel.onEvent(MainScreenEvent)
+                }
+                IMAGE -> {
+                    arguments?.apply {
+                        val url = getString("url")
+                        val index = getString("index")?.toInt()
+                        url?.let {
+                            index?.let {
+                                appViewModel.onEvent(ImageScreenEvent(url = url, index = index))
+                            }
+                        }
+                    }
+                }
+                ADD_IMAGE -> {
+                    val url = arguments?.getString("url")
+                    url?.let {
+                        appViewModel.onEvent(AddImageScreenEvent(url = url))
+                    }
+                }
+            }
+        }
+        return true
+    }
+
     companion object {
 
         const val MAIN = "main"
         const val IMAGE = "image/{index}/{url}"
+        const val ADD_IMAGE = "add_image/{url}"
 
         fun imageRoute(url: String, index: Int): String {
             return IMAGE
                 .replace("{url}", URLEncoder.encode(url, "UTF-8"))
                 .replace("{index}", index.toString())
+        }
+
+        fun addImageRoute(url: String): String {
+            return ADD_IMAGE
+                .replace("{url}", URLEncoder.encode(url, "UTF-8"))
         }
 
         val module = module {

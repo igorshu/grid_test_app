@@ -75,11 +75,6 @@ fun MainContent(
 ) {
     val appState = appViewModel.state.collectAsState()
 
-    val routes = get<Routes>()
-
-    val systemUiController: SystemUiController = rememberSystemUiController()
-    systemUiController.isSystemBarsVisible = true
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -101,6 +96,7 @@ fun MainContent(
             if (urls.isEmpty()) {
                 Loader()
             } else {
+                val routes = get<Routes>()
                 ImageGrid(appViewModel = appViewModel) { url, index ->
                     if (!routes.isImage()) {
                         routes.navigate(Routes.imageRoute(url, index))

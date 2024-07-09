@@ -11,4 +11,7 @@
     <string name="light">Светлый</string>
     <string name="missing_arguments_s">Отсутствуют аргументы %s</string>
     <string name="empty_answer">Сервер вернул пустой ответ</string>
+    <string name="add_image">Добавить картинку</string>
+    <string name="add">Добавить</string>
+    <string name="cancel">Отмена</string>
 </resources>

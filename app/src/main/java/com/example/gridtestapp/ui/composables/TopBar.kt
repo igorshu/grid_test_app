@@ -122,6 +122,7 @@ fun TopBar(
                             )
                         }
                     }
+                    Screen.ADD_IMAGE -> {}
                 }
             }
         )

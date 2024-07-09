@@ -10,36 +10,39 @@ import androidx.lifecycle.viewModelScope
 import arrow.core.None
 import arrow.core.Option
 import com.example.gridtestapp.R
-import com.example.gridtestapp.core.connection.ConnectionManager
 import com.example.gridtestapp.core.NotificationsManager
 import com.example.gridtestapp.core.Settings
+import com.example.gridtestapp.core.cache.CacheManager
+import com.example.gridtestapp.core.cache.ImageLoader
+import com.example.gridtestapp.core.cache.MemoryManager
+import com.example.gridtestapp.core.connection.ConnectionManager
 import com.example.gridtestapp.logic.coroutines.ImageLoadFail
 import com.example.gridtestapp.logic.coroutines.UnknownFail
 import com.example.gridtestapp.logic.coroutines.imageCacheDispatcher
 import com.example.gridtestapp.logic.coroutines.imageExceptionHandler
 import com.example.gridtestapp.logic.coroutines.showError
+import com.example.gridtestapp.logic.events.AddImage
+import com.example.gridtestapp.logic.events.AddImageScreenEvent
 import com.example.gridtestapp.logic.events.AppPaused
 import com.example.gridtestapp.logic.events.AppResumed
+import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
+import com.example.gridtestapp.logic.events.GotUrlIntent
 import com.example.gridtestapp.logic.events.ImageScreenEvent
 import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.MainScreenEvent
 import com.example.gridtestapp.logic.events.OnAppEvent
+import com.example.gridtestapp.logic.events.Reload
+import com.example.gridtestapp.logic.events.RemoveImage
 import com.example.gridtestapp.logic.events.SharePressed
 import com.example.gridtestapp.logic.events.ShowImageFailDialog
 import com.example.gridtestapp.logic.events.ToggleFullScreen
-import com.example.gridtestapp.logic.states.AppState
-import com.example.gridtestapp.logic.states.LoadState
-import com.example.gridtestapp.logic.states.MainScreenState
-import com.example.gridtestapp.logic.states.Screen
-import com.example.gridtestapp.core.cache.CacheManager
-import com.example.gridtestapp.core.cache.MemoryManager
-import com.example.gridtestapp.logic.events.AddImage
-import com.example.gridtestapp.logic.events.ChangeTheme
-import com.example.gridtestapp.logic.events.Reload
-import com.example.gridtestapp.logic.events.RemoveImage
 import com.example.gridtestapp.logic.events.UpdateCurrentImageUrl
+import com.example.gridtestapp.logic.states.AppState
+import com.example.gridtestapp.logic.states.ImageError
+import com.example.gridtestapp.logic.states.LoadState
+import com.example.gridtestapp.logic.states.Screen
 import com.example.gridtestapp.logic.states.Theme
 import com.example.gridtestapp.ui.navigation.Routes
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -59,8 +62,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
-import org.koin.dsl.module
 import org.koin.core.component.inject
+import org.koin.dsl.module
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -68,6 +71,7 @@ import kotlin.math.roundToInt
 class AppViewModel(private val application: Application): AndroidViewModel(application), KoinComponent {
 
     private val notificationsManager: NotificationsManager by inject()
+    private val imageLoader: ImageLoader by inject()
 
     private var updateOuterPreviewsJob: Job? = null
 
@@ -81,7 +85,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad ->
         _state.update {
             val loadedUrls = it.previewUrlStates.toMutableMap().apply { put(url, LoadState.FAIL) }
-            val imageErrors = it.imageErrors.toMutableMap().apply { put(url, MainScreenState.ImageError(errorMessage, canBeLoad)) }
+            val imageErrors = it.imageErrors.toMutableMap().apply { put(url, ImageError(errorMessage, canBeLoad)) }
             it.copy(previewUrlStates = loadedUrls, imageErrors = imageErrors)
         }
     }
@@ -135,16 +139,17 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     private suspend fun loadImage(url: String) {
-        if (CacheManager.isNotCached(url)) {
-            _state.update {
-                it.copy(previewUrlStates = it.previewUrlStates.toMutableMap().apply { put(url, LoadState.LOADING) })
-            }
-            if (CacheManager.loadImage(url)) {
+        imageLoader.loadImage(
+            url,
+            onLoading = { url ->
+                _state.update {
+                    it.copy(previewUrlStates = it.previewUrlStates.toMutableMap().apply { put(url, LoadState.LOADING) })
+                }
+            },
+            onLoaded = { url ->
                 setLoadedState(url)
             }
-        } else {
-            setLoadedState(url)
-        }
+        )
     }
 
     private fun setLoadedState(url: String) {
@@ -251,6 +256,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     val onEvent: OnAppEvent = { event ->
+//        Log.d("AppViewModel.onEvent", event.toString())
         when (event) {
             is ToggleFullScreen -> _state.update {
                 if (it.currentScreen == Screen.IMAGE) { it.copy(showTopBar = !it.showTopBar, showSystemBars = !it.showSystemBars) } else { it }
@@ -268,13 +274,22 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 notificationsManager.showAppNotification()
             }
             is ImageScreenEvent -> _state.update {
-                it.copy(showTopBar = true,
+                it.copy(
+                    showTopBar = true,
                     showSystemBars = true,
                     title = event.url,
                     currentImage = AppState.ImagePair(event.url, event.index),
                     showBack = true,
-                    deletingImage = false,
+                    hideImage = false,
                     currentScreen = Screen.IMAGE,
+                )
+            }
+            is AddImageScreenEvent -> _state.update {
+                it.copy(
+                    showTopBar = false,
+                    showSystemBars = false,
+                    currentScreen = Screen.ADD_IMAGE,
+                    hideImage = true,
                 )
             }
             is SharePressed -> shareUrl(event.url)
@@ -304,17 +319,30 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is Reload -> reload()
             is RemoveImage -> removeImage(event.url, event.index)
             is UpdateCurrentImageUrl -> _state.update { it.copy(currentImage = AppState.ImagePair(event.url, event.index)) }
-            is AddImage -> addImage(event.url)
+            is GotUrlIntent -> navigateToAddImage(event.url)
+            is AddImage -> addImageToTop(event.url)
         }
     }
 
-    private fun addImage(url: String) {
-        if (state.value.currentScreen == Screen.IMAGE) {
-            get<Routes>().goBack()
+    private fun navigateToAddImage(url: String) {
+        viewModelScope.launch(handler + Dispatchers.Main) {
+            get<Routes>().replaceToMain(Routes.addImageRoute(url))
+        }
+    }
+
+    private fun addImageToTop(url: String) {
+        _state.update {
+            val urls = it.urls.toMutableList().apply {
+                remove(url)
+                add(0, url)
+            }
+            it.copy(urls = urls)
         }
 
-        _state.update {
-            it.copy(urls = it.urls.toMutableList().apply { add(url) })
+        if (state.value.currentScreen == Screen.ADD_IMAGE) {
+            viewModelScope.launch(handler + Dispatchers.Main) {
+                get<Routes>().goBack()
+            }
         }
     }
 
@@ -333,7 +361,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                     it.copy(
                         urls = newState.urls,
                         previewUrlStates = previewUrlStates,
-                        deletingImage = true)
+                        hideImage = true)
                 }
             }
 
@@ -371,4 +399,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         }
     }
 
+    override fun onCleared() {
+        Log.d("appViewModel", "onCleared")
+        super.onCleared()
+    }
 }

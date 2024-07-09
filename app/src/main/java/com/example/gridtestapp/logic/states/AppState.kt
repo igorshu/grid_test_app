@@ -4,7 +4,7 @@ import arrow.core.None
 import arrow.core.Option
 
 enum class Screen {
-    MAIN, IMAGE
+    MAIN, IMAGE, ADD_IMAGE
 }
 
 enum class Theme {
@@ -21,7 +21,7 @@ data class AppState internal constructor (
     val urls: List<String>,
     val previewUrlStates: Map<String, LoadState>,
     val showImageFailDialog: Option<String>,
-    val imageErrors: Map<String, MainScreenState.ImageError>,
+    val imageErrors: Map<String, ImageError>,
     val screenRange: IntRange,
     val preloadRange: IntRange,
     val inetAvailable: Boolean,
@@ -31,7 +31,7 @@ data class AppState internal constructor (
     val title: String,
     val currentScreen: Screen,
     val currentImage: ImagePair?,
-    val deletingImage: Boolean
+    val hideImage: Boolean
 ) {
     companion object {
         fun init(title: String): AppState = AppState(
@@ -49,7 +49,7 @@ data class AppState internal constructor (
             title = title,
             currentScreen = Screen.MAIN,
             currentImage = null,
-            deletingImage = false,
+            hideImage = false,
         )
     }
 
