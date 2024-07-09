@@ -40,7 +40,7 @@ import com.example.gridtestapp.logic.events.RemoveImage
 import com.example.gridtestapp.logic.events.SharePressed
 import com.example.gridtestapp.logic.events.ShowImageFailDialog
 import com.example.gridtestapp.logic.events.ToggleFullScreen
-import com.example.gridtestapp.logic.events.UpdateCurrentImageUrl
+import com.example.gridtestapp.logic.events.UpdateCurrentImage
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.ImageError
 import com.example.gridtestapp.logic.states.LoadState
@@ -331,7 +331,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is ChangeTheme -> changeTheme(event)
             is Reload -> reload()
             is RemoveImage -> removeImage(event.url, event.index)
-            is UpdateCurrentImageUrl -> _state.update { it.copy(currentImage = AppState.ImagePair(event.url, event.index)) }
+            is UpdateCurrentImage -> _state.update { it.copy(currentImage = AppState.ImagePair(event.url, event.index)) }
             is GotUrlIntent -> navigateToAddImage(event.url)
             is AddImage -> addImageToTop(event.url)
         }

@@ -1,6 +1,5 @@
 package com.example.gridtestapp.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,7 +23,7 @@ import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
 import com.example.gridtestapp.logic.events.ShowImageNotification
 import com.example.gridtestapp.logic.events.ToggleFullScreen
-import com.example.gridtestapp.logic.events.UpdateCurrentImageUrl
+import com.example.gridtestapp.logic.events.UpdateCurrentImage
 import com.example.gridtestapp.logic.states.LoadState.FAIL
 import com.example.gridtestapp.logic.states.LoadState.LOADED
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
@@ -72,7 +71,7 @@ fun ImageContent(
                 val currentUrl = urls[currentPage]
 
                 imageViewModel.onEvent(ShowImageNotification(currentUrl))
-                appViewModel.onEvent(UpdateCurrentImageUrl(currentUrl, currentPage))
+                appViewModel.onEvent(UpdateCurrentImage(currentUrl, currentPage))
             }
 
             HorizontalPager(state = pagerState) { index ->
