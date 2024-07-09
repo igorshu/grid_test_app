@@ -2,6 +2,7 @@ package com.example.gridtestapp.ui
 
 import android.app.Application
 import com.example.gridtestapp.core.NotificationsManager
+import com.example.gridtestapp.core.LocalRepo
 import com.example.gridtestapp.core.cache.ImageLoader
 import com.example.gridtestapp.logic.viewmodels.AddImageViewModel
 import com.example.gridtestapp.logic.viewmodels.MainViewModel
@@ -30,6 +31,7 @@ class App: Application(), KoinComponent {
                 NotificationsManager.module,
                 ImageLoader.module,
                 AddImageViewModel.module,
+                LocalRepo.module,
             )
         }
     }

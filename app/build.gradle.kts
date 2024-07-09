@@ -84,6 +84,7 @@ dependencies {
     implementation("org.apache.commons:commons-io:1.3.2")
 
     implementation("com.robertlevonyan.compose:buttontogglegroup:1.2.0")
+    implementation("com.google.code.gson:gson:2.11.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

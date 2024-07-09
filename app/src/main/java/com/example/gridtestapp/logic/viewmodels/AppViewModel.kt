@@ -12,6 +12,7 @@ import arrow.core.None
 import arrow.core.Option
 import com.example.gridtestapp.R
 import com.example.gridtestapp.core.NotificationsManager
+import com.example.gridtestapp.core.LocalRepo
 import com.example.gridtestapp.core.Settings
 import com.example.gridtestapp.core.cache.CacheManager
 import com.example.gridtestapp.core.cache.ImageLoader
@@ -73,6 +74,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
     private val notificationsManager: NotificationsManager by inject()
     private val imageLoader: ImageLoader by inject()
+    private val localRepo: LocalRepo by inject()
 
     private var updateOuterPreviewsJob: Job? = null
 
@@ -120,19 +122,23 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     private fun loadLinks() {
-        val request: Request = Request.Builder()
-            .url(MAIN_URL)
-            .build()
+        val urls = localRepo.loadUrls() ?: run {
+            val request: Request = Request.Builder()
+                .url(MAIN_URL)
+                .build()
 
-        val txt = OkHttpClient().newCall(request).execute().use {
-            response -> return@use response.body?.string() ?: throw Exception(application.getString(R.string.empty_answer))
+            val txt = OkHttpClient().newCall(request).execute().use {
+                    response -> return@use response.body?.string() ?: throw Exception(application.getString(R.string.empty_answer))
+            }
+
+            txt.lines().apply {
+                localRepo.saveUrls(this)
+            }
         }
 
-        val lines = txt.lines()
+        _state.update { it.copy(urls = urls) }
 
-        _state.update { it.copy(urls = lines) }
-
-        lines.forEach { url ->
+        urls.forEach { url ->
             _state.update {
                 it.copy(previewUrlStates = it.previewUrlStates.toMutableMap().apply { put(url, LoadState.IDLE) })
             }
@@ -332,13 +338,15 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     private fun addImageToTop(url: String) {
-        _state.update {
+        val newState = _state.updateAndGet {
             val urls = it.urls.toMutableList().apply {
                 remove(url)
                 add(0, url)
             }
             it.copy(urls = urls)
         }
+
+        localRepo.saveUrls(newState.urls)
 
         if (state.value.currentScreen == Screen.ADD_IMAGE) {
             viewModelScope.launch(handler + Dispatchers.Main) {
@@ -365,6 +373,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                         hideImage = true)
                 }
             }
+
+            localRepo.saveUrls(newState.urls)
 
             viewModelScope.launch(handler + Dispatchers.Main) {
                 get<Routes>().navigate(Routes.MAIN)
