@@ -146,7 +146,7 @@ class MainActivity : ComponentActivity() {
                         composable(Routes.ADD_IMAGE) { backStackEntry ->
                             backStackEntry.arguments?.let { arguments ->
                                 arguments.getString("url")?.let { url ->
-                                    AddImageContent(url)
+                                    AddImageContent(paddingValues, url)
                                 }
                             }
                         }

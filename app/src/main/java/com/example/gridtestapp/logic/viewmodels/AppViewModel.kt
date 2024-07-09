@@ -266,7 +266,9 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 //        Log.d("AppViewModel.onEvent", event.toString())
         when (event) {
             is ToggleFullScreen -> _state.update {
-                if (it.currentScreen == Screen.IMAGE) { it.copy(showTopBar = !it.showTopBar, showSystemBars = !it.showSystemBars) } else { it }
+                if (it.currentScreen in setOf(Screen.IMAGE, Screen.ADD_IMAGE)) {
+                    it.copy(showTopBar = !it.showTopBar, showSystemBars = !it.showSystemBars)
+                } else { it }
             }
             is MainScreenEvent -> {
                 _state.update {
@@ -293,10 +295,12 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             }
             is AddImageScreenEvent -> _state.update {
                 it.copy(
-                    showTopBar = false,
-                    showSystemBars = false,
-                    currentScreen = Screen.ADD_IMAGE,
+                    showTopBar = true,
+                    showSystemBars = true,
+                    title = event.url,
+                    showBack = true,
                     hideImage = true,
+                    currentScreen = Screen.ADD_IMAGE,
                 )
             }
             is SharePressed -> shareUrl(event.url)

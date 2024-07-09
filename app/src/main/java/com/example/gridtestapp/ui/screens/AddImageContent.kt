@@ -1,10 +1,11 @@
 package com.example.gridtestapp.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,6 +42,7 @@ import org.koin.core.parameter.parametersOf
 
 @Composable
 fun AddImageContent(
+    paddingValues: PaddingValues,
     url: String,
     addImageViewModel: AddImageViewModel = get(parameters = { parametersOf(url) }),
     appViewModel: AppViewModel = get(),
@@ -59,15 +62,15 @@ fun AddImageContent(
                 exitScale = 0.6f,
                 onExit = { addImageViewModel.onEvent(CancelAdd) },
             )
-            Column(
-                modifier = Modifier.fillMaxSize().padding(vertical = 10.dp)
+            Box(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.background),
             ) {
                 Image(
                     painter = BitmapPainter(originalImage),
                     contentDescription = "Add Image",
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1.0f)
+                        .fillMaxSize()
                         .clickable(
                             interactionSource,
                             indication = null,
@@ -77,7 +80,10 @@ fun AddImageContent(
                         .zoomable(zoomState)
                 )
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = paddingValues.calculateBottomPadding() + 15.dp)
                 ) {
                     Spacer(modifier = Modifier.weight(0.5f))
                     FilledTonalButton(onClick = {
