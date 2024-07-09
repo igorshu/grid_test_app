@@ -82,7 +82,6 @@ class ImageViewModel(
                 val bitmap = CacheManager.originalImageBitmap(url)
                 if (bitmap != null) {
                     _state.update {
-
                         val originalUrlStates = it.originalUrlStates.toMutableMap()
                         urls.filterIndexed() { i, url ->
                             i < index - Settings.ORIGINAL_PRELOAD_OFFSET || i > index + Settings.ORIGINAL_PRELOAD_OFFSET

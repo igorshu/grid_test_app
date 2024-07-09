@@ -181,7 +181,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         }
     }
 
-    private fun loadImageFromMemory(url: String) {
+    private fun loadPreviewFromMemory(url: String) {
         viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
             if (!MemoryManager.previewExists(url)) {
                 if (state.value.previewUrlStates[url] == LoadState.IDLE) {
@@ -260,7 +260,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             .urls
             .subList(state.value.preloadRange.first, state.value.preloadRange.last)
             .forEach { url ->
-                loadImageFromMemory(url)
+                loadPreviewFromMemory(url)
             }
     }
 
@@ -322,7 +322,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
                 if (event.index != null) {
                     val url = state.value.urls[event.index]
-                    loadImageFromMemory(url)
+                    loadPreviewFromMemory(url)
                 }
             }
             is AppResumed -> notificationsManager.showResumeNotification()
@@ -348,19 +348,35 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     private fun addImageToTop(url: String) {
-        val newState = _state.updateAndGet {
-            val urls = it.urls.toMutableList().apply {
-                remove(url)
-                add(0, url)
+        viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
+            val newState = _state.updateAndGet {
+                val urls = it.urls.toMutableList().apply {
+                    remove(url)
+                    add(0, url)
+                }
+                it.copy(urls = urls)
             }
-            it.copy(urls = urls)
-        }
 
-        localRepo.urls = newState.urls
+            if (CacheManager.isCached(url)) {
+                val bitmap = CacheManager.previewImageBitmap(url)
+                if (bitmap != null) {
+                    MemoryManager.addPreviewBitmap(url, bitmap)
 
-        if (state.value.currentScreen == Screen.ADD_IMAGE) {
-            viewModelScope.launch(handler + Dispatchers.Main) {
-                get<Routes>().goBack()
+                    _state.update {
+                        val previewUrlStates = it.previewUrlStates.toMutableMap().apply {
+                            put(url, LoadState.LOADED)
+                        }
+                        it.copy(previewUrlStates = previewUrlStates)
+                    }
+                }
+            }
+
+            localRepo.urls = newState.urls
+
+            if (state.value.currentScreen == Screen.ADD_IMAGE) {
+                viewModelScope.launch(handler + Dispatchers.Main) {
+                    get<Routes>().goBack()
+                }
             }
         }
     }
