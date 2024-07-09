@@ -19,20 +19,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
 import com.example.gridtestapp.logic.events.ShowImageNotification
 import com.example.gridtestapp.logic.events.ToggleFullScreen
 import com.example.gridtestapp.logic.events.UpdateCurrentImageUrl
-import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.LoadState.FAIL
 import com.example.gridtestapp.logic.states.LoadState.LOADED
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.logic.viewmodels.ImageViewModel
 import com.example.gridtestapp.ui.navigation.Routes
-import com.google.accompanist.systemuicontroller.SystemUiController
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 import org.koin.androidx.compose.get
@@ -73,10 +69,10 @@ fun ImageContent(
             HorizontalPager(state = pagerState) { index ->
                 val url = urls[index]
 
-                LaunchedEffect(key1 = index) {
+                LaunchedEffect(key1 = pagerState.settledPage) {
                     val currentUrl = urls[pagerState.settledPage]
                     imageViewModel.onEvent(ShowImageNotification(currentUrl))
-                    appViewModel.onEvent(UpdateCurrentImageUrl(currentUrl, index))
+                    appViewModel.onEvent(UpdateCurrentImageUrl(currentUrl, pagerState.settledPage))
                 }
 
                 val urlState = imageState.value.originalUrlStates[url]
