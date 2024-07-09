@@ -1,5 +1,6 @@
 package com.example.gridtestapp.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -66,14 +67,16 @@ fun ImageContent(
                 pageCount = { urls.size }
             )
 
+            LaunchedEffect(key1 = pagerState.currentPage) {
+                val currentPage = pagerState.currentPage
+                val currentUrl = urls[currentPage]
+
+                imageViewModel.onEvent(ShowImageNotification(currentUrl))
+                appViewModel.onEvent(UpdateCurrentImageUrl(currentUrl, currentPage))
+            }
+
             HorizontalPager(state = pagerState) { index ->
                 val url = urls[index]
-
-                LaunchedEffect(key1 = pagerState.settledPage) {
-                    val currentUrl = urls[pagerState.settledPage]
-                    imageViewModel.onEvent(ShowImageNotification(currentUrl))
-                    appViewModel.onEvent(UpdateCurrentImageUrl(currentUrl, pagerState.settledPage))
-                }
 
                 val urlState = imageState.value.originalUrlStates[url]
 
