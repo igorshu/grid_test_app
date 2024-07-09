@@ -34,12 +34,20 @@ class LocalRepo(application: Application): KoinComponent {
         }
     }
 
+    private fun SharedPreferences.clear(key: String) {
+        edit { remove(key) }
+    }
+
     fun loadUrls(): List<String>? {
         return preferences.readList(gson, URLS)
     }
 
     fun saveUrls(urls: List<String>) {
         preferences.writeList(gson, URLS, urls)
+    }
+
+    fun clearUrls() {
+        preferences.clear(URLS)
     }
 
     companion object {

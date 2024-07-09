@@ -386,6 +386,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         viewModelScope.launch(handler + Dispatchers.IO) {
             MemoryManager.clearAll()
             CacheManager.clearAll()
+            localRepo.clearUrls()
 
             _state.update { it.clear() }
             loadLinks()
