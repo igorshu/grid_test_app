@@ -1,6 +1,7 @@
 package com.example.gridtestapp.logic.viewmodels
 
 import android.app.Application
+import android.content.ComponentName
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
@@ -385,10 +386,20 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         val intent = Intent(Intent.ACTION_SEND).apply {
             putExtra(Intent.EXTRA_TEXT, url)
             type = "text/plain"
-            setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        application.startActivity(intent)
-    }
+        application.packageManager.queryIntentActivities(intent, 0)
+            .filter { resolveInfo ->
+                resolveInfo.activityInfo.packageName == application.packageName
+            }.map { resolveInfo ->
+                resolveInfo.activityInfo
+            }.firstOrNull()?.let {
+                val intentChooser = Intent.createChooser(intent, application.getString(R.string.share)).apply {
+                    putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, arrayOf(ComponentName(it.packageName, it.name)))
+                    setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                application.startActivity(intentChooser)
+            }
+        }
 
     companion object {
 
