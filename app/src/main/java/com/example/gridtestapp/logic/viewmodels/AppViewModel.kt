@@ -108,6 +108,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             listenConnectionState()
             ConnectionManager.init(application)
         }
+
+        _state.update { it.copy(theme = Theme.entries[localRepo.theme]) }
     }
 
     private suspend fun listenConnectionState() {
@@ -122,7 +124,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     private fun loadLinks() {
-        val urls = localRepo.loadUrls() ?: run {
+        val urls = localRepo.urls ?: run {
             val request: Request = Request.Builder()
                 .url(MAIN_URL)
                 .build()
@@ -132,7 +134,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             }
 
             txt.lines().apply {
-                localRepo.saveUrls(this)
+                localRepo.urls = this
             }
         }
 
@@ -326,13 +328,18 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             }
             is AppResumed -> notificationsManager.showResumeNotification()
             is AppPaused -> notificationsManager.hideNotification()
-            is ChangeTheme -> _state.update { it.copy(theme = Theme.entries[event.index]) }
+            is ChangeTheme -> changeTheme(event)
             is Reload -> reload()
             is RemoveImage -> removeImage(event.url, event.index)
             is UpdateCurrentImageUrl -> _state.update { it.copy(currentImage = AppState.ImagePair(event.url, event.index)) }
             is GotUrlIntent -> navigateToAddImage(event.url)
             is AddImage -> addImageToTop(event.url)
         }
+    }
+
+    private fun changeTheme(event: ChangeTheme) {
+        localRepo.theme = event.index
+        _state.update { it.copy(theme = Theme.entries[event.index]) }
     }
 
     private fun navigateToAddImage(url: String) {
@@ -350,7 +357,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             it.copy(urls = urls)
         }
 
-        localRepo.saveUrls(newState.urls)
+        localRepo.urls = newState.urls
 
         if (state.value.currentScreen == Screen.ADD_IMAGE) {
             viewModelScope.launch(handler + Dispatchers.Main) {
@@ -378,7 +385,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 }
             }
 
-            localRepo.saveUrls(newState.urls)
+            localRepo.urls = newState.urls
 
             viewModelScope.launch(handler + Dispatchers.Main) {
                 get<Routes>().navigate(Routes.MAIN)

@@ -18,12 +18,20 @@ class LocalRepo(application: Application): KoinComponent {
 
     private val gson: Gson by inject()
 
-    private fun <T> SharedPreferences.writeList(gson: Gson, key: String, data: List<T>) {
+    var theme: Int
+        get() = preferences.getInt(THEME, 0)
+        set(index) = preferences.edit { putInt(THEME, index) }
+
+    var urls: List<String>?
+        get() = preferences.readList(URLS)
+        set(urls) = preferences.writeList(URLS, urls)
+
+    private fun <T> SharedPreferences.writeList(key: String, data: List<T>?) {
         val json = gson.toJson(data)
         edit { putString(key, json) }
     }
 
-    private inline fun <reified T> SharedPreferences.readList(gson: Gson, key: String): List<T>? {
+    private inline fun <reified T> SharedPreferences.readList(key: String): List<T>? {
         val json = getString(key, null)
         val type = object : TypeToken<List<T>>() {}.type
 
@@ -38,21 +46,15 @@ class LocalRepo(application: Application): KoinComponent {
         edit { remove(key) }
     }
 
-    fun loadUrls(): List<String>? {
-        return preferences.readList(gson, URLS)
-    }
-
-    fun saveUrls(urls: List<String>) {
-        preferences.writeList(gson, URLS, urls)
-    }
-
     fun clearUrls() {
         preferences.clear(URLS)
     }
 
+
     companion object {
 
         const val URLS = "urls"
+        const val THEME = "theme"
 
         val module = module {
             single { LocalRepo(get()) }
