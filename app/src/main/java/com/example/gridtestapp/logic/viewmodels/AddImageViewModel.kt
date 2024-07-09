@@ -14,8 +14,10 @@ import com.example.gridtestapp.logic.coroutines.UnknownFail
 import com.example.gridtestapp.logic.coroutines.imageExceptionHandler
 import com.example.gridtestapp.logic.coroutines.showError
 import com.example.gridtestapp.logic.events.AddImageEvent
+import com.example.gridtestapp.logic.events.AppEvent
 import com.example.gridtestapp.logic.events.CancelAdd
 import com.example.gridtestapp.logic.events.LoadImage
+import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.states.AddImageState
 import com.example.gridtestapp.logic.states.ImageError
 import com.example.gridtestapp.logic.states.LoadState
@@ -66,6 +68,12 @@ class AddImageViewModel(application: Application, url: String): AndroidViewModel
     val state: StateFlow<AddImageState> = _state.asStateFlow()
 
     init {
+    }
+
+    fun onAppEvent(event: AppEvent) {
+        if (event is LoadImageAgain) {
+            loadImage(event.url)
+        }
     }
 
     fun onEvent(event: AddImageEvent) {

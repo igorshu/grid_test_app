@@ -224,7 +224,11 @@ fun ImageGrid(
                 else -> {}
             }
 
-            ImageFailDialog(url, appViewModel = appViewModel)
+            ImageFailDialog(
+                url,
+                appViewModel = appViewModel,
+                onLoadAgain = { appViewModel.onEvent(LoadImageAgain(url)) }
+            )
         }
     }
 }
@@ -248,7 +252,8 @@ fun FailBox(
 @OptIn(ExperimentalMaterial3Api::class)
 fun ImageFailDialog(
     url: String,
-    appViewModel: AppViewModel = get()
+    appViewModel: AppViewModel = get(),
+    onLoadAgain: () -> Unit,
 ) {
     val appState = appViewModel.state.collectAsState()
 
@@ -278,7 +283,10 @@ fun ImageFailDialog(
                         if (imageError.canBeLoad) {
                             Button(
                                 modifier = Modifier.padding(top = 15.dp),
-                                onClick = { appViewModel.onEvent(LoadImageAgain(url)) }
+                                onClick = {
+                                    appViewModel.onEvent(DismissImageFailDialog)
+                                    onLoadAgain.invoke()
+                               },
                             ) {
                                 Text(stringResource(id = R.string.load_again))
                             }

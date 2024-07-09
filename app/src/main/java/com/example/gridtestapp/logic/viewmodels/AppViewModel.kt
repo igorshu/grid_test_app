@@ -309,7 +309,6 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is ShowImageFailDialog ->  _state.update {  it.copy(showImageFailDialog = Option(event.url)) }
             is DismissImageFailDialog -> _state.update {  it.copy(showImageFailDialog = None) }
             is LoadImageAgain -> {
-                _state.update {  it.copy(showImageFailDialog = None) }
                 loadImageAgain(event)
             }
             is ChangeVisibleIndexes -> {

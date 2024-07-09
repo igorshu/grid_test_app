@@ -30,6 +30,7 @@ import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.logic.events.AddImage
 import com.example.gridtestapp.logic.events.CancelAdd
 import com.example.gridtestapp.logic.events.LoadImage
+import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.ToggleFullScreen
 import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.LoadState.FAIL
@@ -104,20 +105,29 @@ fun AddImageContent(
             Box(modifier = Modifier.aspectRatio(1.0f)) {}
         }
     } else {
-        val urlState = state.value.loadState
-        if (urlState == FAIL) {
-            FailBox(url, appViewModel = appViewModel)
-        } else {
-            Box(
-                modifier = Modifier.aspectRatio(1.0f),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
-                LaunchedEffect(key1 = url) {
-                    addImageViewModel.onEvent(LoadImage(url))
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            val urlState = state.value.loadState
+            if (urlState == FAIL) {
+                FailBox(url, appViewModel = appViewModel)
+            } else {
+                Box(
+                    modifier = Modifier.aspectRatio(1.0f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
+                    LaunchedEffect(key1 = url) {
+                        addImageViewModel.onEvent(LoadImage(url))
+                    }
                 }
             }
         }
-        ImageFailDialog(url, appViewModel = appViewModel)
+        ImageFailDialog(
+            url,
+            appViewModel = appViewModel,
+            onLoadAgain = { addImageViewModel.onAppEvent(LoadImageAgain(url)) }
+        )
     }
 }

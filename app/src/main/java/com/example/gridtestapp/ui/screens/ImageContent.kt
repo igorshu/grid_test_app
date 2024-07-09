@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import com.example.gridtestapp.core.cache.MemoryManager
+import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
 import com.example.gridtestapp.logic.events.ShowImageNotification
 import com.example.gridtestapp.logic.events.ToggleFullScreen
@@ -126,7 +127,11 @@ fun ImageContent(
                         }
                     }
                 }
-                ImageFailDialog(url, appViewModel = appViewModel)
+                ImageFailDialog(
+                    url,
+                    appViewModel = appViewModel,
+                    onLoadAgain = { appViewModel.onEvent(LoadImageAgain(url)) }
+                )
             }
         }
     }
