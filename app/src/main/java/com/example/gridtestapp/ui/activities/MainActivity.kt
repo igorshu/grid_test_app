@@ -41,13 +41,12 @@ import com.example.gridtestapp.ui.theme.GridTestAppTheme
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import org.koin.android.ext.android.inject
-import org.koin.androidx.compose.get
-import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), KoinComponent {
 
     private val notificationsManager: NotificationsManager by inject()
-    private val appViewModel: AppViewModel by viewModel()
     private val routes: Routes by inject()
 
     private fun addCallBackDispatcher() {
@@ -74,6 +73,7 @@ class MainActivity : ComponentActivity() {
         notificationsManager.createNotificationChannel()
 
         setContent {
+            val appViewModel = get<AppViewModel>()
             val navController = rememberNavController()
             LaunchedEffect(key1 = navController) {
                 routes.addListener(appViewModel, navController)
@@ -158,7 +158,7 @@ class MainActivity : ComponentActivity() {
 
     private fun parseIntent(intent: Intent) {
         intent.getStringExtra(ADD_URL)?.let { url ->
-            appViewModel.onEvent(GotUrlIntent(url))
+            get<AppViewModel>().onEvent(GotUrlIntent(url))
         }
     }
 
