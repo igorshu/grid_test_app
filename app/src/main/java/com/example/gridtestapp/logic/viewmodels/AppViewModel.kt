@@ -11,8 +11,8 @@ import androidx.lifecycle.viewModelScope
 import arrow.core.None
 import arrow.core.Option
 import com.example.gridtestapp.R
-import com.example.gridtestapp.core.NotificationsManager
 import com.example.gridtestapp.core.LocalRepo
+import com.example.gridtestapp.core.NotificationsManager
 import com.example.gridtestapp.core.Settings
 import com.example.gridtestapp.core.cache.CacheManager
 import com.example.gridtestapp.core.cache.ImageLoader
@@ -54,8 +54,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.isActive
@@ -75,6 +73,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     private val notificationsManager: NotificationsManager by inject()
     private val imageLoader: ImageLoader by inject()
     private val localRepo: LocalRepo by inject()
+    private val connectionManager: ConnectionManager by inject()
 
     private var updateOuterPreviewsJob: Job? = null
 
@@ -99,28 +98,20 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         }
     }
 
-    private val _imageExceptionHandler = imageExceptionHandler(imageLoadFail, unknownFail)
+    private val _imageExceptionHandler = imageExceptionHandler(imageLoadFail, unknownFail, connectionManager)
 
     init {
+        viewModelScope.launch {
+            connectionManager.listen { restoreAfterDisconnect() }
+        }
+
         viewModelScope.launch(handler + Dispatchers.IO) {
             CacheManager.init(application)
             loadLinks()
-            listenConnectionState()
-            ConnectionManager.init(application)
+            connectionManager.init()
         }
 
         _state.update { it.copy(theme = Theme.entries[localRepo.theme]) }
-    }
-
-    private suspend fun listenConnectionState() {
-        ConnectionManager
-            .state
-            .onEach { connectionState ->
-                Log.d("ConnectionManager", "connectionState = $connectionState")
-                if (!connectionState.previous && connectionState.current) {
-                    restoreAfterDisconnect()
-                }
-            }.collect()
     }
 
     private fun loadLinks() {

@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.gridtestapp.core.cache.CacheManager
 import com.example.gridtestapp.core.cache.ImageLoader
 import com.example.gridtestapp.core.cache.MemoryManager
+import com.example.gridtestapp.core.connection.ConnectionManager
 import com.example.gridtestapp.logic.coroutines.ImageLoadFail
 import com.example.gridtestapp.logic.coroutines.UnknownFail
 import com.example.gridtestapp.logic.coroutines.imageExceptionHandler
@@ -34,10 +35,11 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.dsl.module
 
-class AddImageViewModel(application: Application, url: String): AndroidViewModel(application), KoinComponent {
+class AddImageViewModel(application: Application, val url: String): AndroidViewModel(application), KoinComponent {
 
     private val loader: ImageLoader by inject()
     private val routes: Routes by inject()
+    private val connectionManager: ConnectionManager by inject()
 
     private val handler = CoroutineExceptionHandler { _, exception ->
         showError(
@@ -62,12 +64,19 @@ class AddImageViewModel(application: Application, url: String): AndroidViewModel
         }
     }
 
-    private val _imageExceptionHandler = imageExceptionHandler(imageLoadFail, unknownFail)
+    private val _imageExceptionHandler = imageExceptionHandler(imageLoadFail, unknownFail, connectionManager)
 
     private val _state: MutableStateFlow<AddImageState> = MutableStateFlow(AddImageState.init())
     val state: StateFlow<AddImageState> = _state.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            connectionManager.listen { restoreAfterDisconnect() }
+        }
+    }
+
+    private fun restoreAfterDisconnect() {
+        loadImage(url)
     }
 
     fun onAppEvent(event: AppEvent) {

@@ -29,6 +29,8 @@ import com.example.gridtestapp.logic.states.LoadState.FAIL
 import com.example.gridtestapp.logic.states.LoadState.LOADED
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.logic.viewmodels.ImageViewModel
+import com.example.gridtestapp.ui.composables.FailBox
+import com.example.gridtestapp.ui.composables.ImageFailDialog
 import com.example.gridtestapp.ui.navigation.Routes
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
@@ -128,7 +130,8 @@ fun ImageContent(
                     }
                 }
                 ImageFailDialog(
-                    url,
+                    appState.value.showImageFailDialog.isSome { it == url },
+                    appState.value.imageErrors[url],
                     appViewModel = appViewModel,
                     onLoadAgain = { appViewModel.onEvent(LoadImageAgain(url)) }
                 )

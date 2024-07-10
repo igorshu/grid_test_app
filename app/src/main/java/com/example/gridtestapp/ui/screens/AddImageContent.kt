@@ -36,6 +36,8 @@ import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.LoadState.FAIL
 import com.example.gridtestapp.logic.viewmodels.AddImageViewModel
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
+import com.example.gridtestapp.ui.composables.FailBox
+import com.example.gridtestapp.ui.composables.ImageFailDialog
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 import org.koin.androidx.compose.get
@@ -50,6 +52,7 @@ fun AddImageContent(
 ) {
 
     val state = addImageViewModel.state.collectAsState()
+    val appState = appViewModel.state.collectAsState()
 
     if (state.value.loadState == LoadState.LOADED) {
         val originalImage = remember {
@@ -125,7 +128,8 @@ fun AddImageContent(
             }
         }
         ImageFailDialog(
-            url,
+            appState.value.showImageFailDialog.isSome { it == url },
+            state.value.imageError,
             appViewModel = appViewModel,
             onLoadAgain = { addImageViewModel.onAppEvent(LoadImageAgain(url)) }
         )

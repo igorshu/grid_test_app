@@ -29,8 +29,9 @@ val imageCacheDispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher
 fun imageExceptionHandler(
     imageLoadFail: ImageLoadFail,
     unknownFail: UnknownFail,
+    connectionManager: ConnectionManager,
     ) = CoroutineExceptionHandler { _, throwable ->
-        if (ConnectionManager.online) {
+        if (connectionManager.online) {
             when (throwable) {
                 is ImageLoadException -> {
                     val (errorMessage, canBeLoad) = if (throwable.innerException == null) {

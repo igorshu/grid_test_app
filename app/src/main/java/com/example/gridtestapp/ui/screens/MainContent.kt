@@ -8,24 +8,14 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -33,33 +23,28 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat.getString
 import com.example.gridtestapp.R
 import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
-import com.example.gridtestapp.logic.events.DismissImageFailDialog
 import com.example.gridtestapp.logic.events.LoadImageAgain
-import com.example.gridtestapp.logic.events.ShowImageFailDialog
 import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
 import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.logic.viewmodels.MainViewModel
+import com.example.gridtestapp.ui.composables.FailBox
+import com.example.gridtestapp.ui.composables.ImageFailDialog
+import com.example.gridtestapp.ui.composables.ImageLoader
+import com.example.gridtestapp.ui.composables.Loader
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.theme.DarkColorScheme
 import com.example.gridtestapp.ui.theme.LightColorScheme
-import com.google.accompanist.systemuicontroller.SystemUiController
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.robertlevonyan.compose.buttontogglegroup.RowToggleButtonGroup
 import org.koin.androidx.compose.get
 
@@ -225,106 +210,11 @@ fun ImageGrid(
             }
 
             ImageFailDialog(
-                url,
+                appState.value.showImageFailDialog.isSome { it == url },
+                appState.value.imageErrors[url],
                 appViewModel = appViewModel,
                 onLoadAgain = { appViewModel.onEvent(LoadImageAgain(url)) }
             )
         }
-    }
-}
-
-@Composable
-fun FailBox(
-    url: String,
-    appViewModel: AppViewModel = get()
-) {
-    Box(
-        modifier = Modifier
-            .aspectRatio(1.0f)
-            .clickable { appViewModel.onEvent(ShowImageFailDialog(url)) },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(stringResource(id = R.string.error))
-    }
-}
-
-@Composable
-@OptIn(ExperimentalMaterial3Api::class)
-fun ImageFailDialog(
-    url: String,
-    appViewModel: AppViewModel = get(),
-    onLoadAgain: () -> Unit,
-) {
-    val appState = appViewModel.state.collectAsState()
-
-    if (appState.value.showImageFailDialog.isSome { it == url }) {
-        val imageError = appState.value.imageErrors[url]
-        imageError?.let {
-            AlertDialog(onDismissRequest = { appViewModel.onEvent(DismissImageFailDialog) }) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.background)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 15.dp, horizontal = 10.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            stringResource(id = R.string.loading_error),
-                            style = TextStyle(fontSize = 24.sp)
-                        )
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Text(imageError.errorMessage)
-                        Spacer(modifier = Modifier.height(5.dp))
-                        if (imageError.canBeLoad) {
-                            Button(
-                                modifier = Modifier.padding(top = 15.dp),
-                                onClick = {
-                                    appViewModel.onEvent(DismissImageFailDialog)
-                                    onLoadAgain.invoke()
-                               },
-                            ) {
-                                Text(stringResource(id = R.string.load_again))
-                            }
-                        }
-                        Button(
-                            modifier = Modifier.padding(top = 15.dp),
-                            onClick = { appViewModel.onEvent(DismissImageFailDialog) }
-                        ) {
-                            Text(stringResource(id = R.string.ok))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ImageLoader() {
-    Box(
-        modifier = Modifier
-            .aspectRatio(1.0f),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
-    }
-}
-
-@Composable
-fun Loader() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator(
-            modifier = Modifier.width(64.dp),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-        )
     }
 }

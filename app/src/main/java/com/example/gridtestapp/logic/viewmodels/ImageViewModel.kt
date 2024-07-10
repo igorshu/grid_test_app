@@ -19,6 +19,7 @@ import com.example.gridtestapp.logic.states.ImageScreenState
 import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.core.cache.CacheManager
 import com.example.gridtestapp.core.cache.MemoryManager
+import com.example.gridtestapp.core.connection.ConnectionManager
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,11 +40,12 @@ import org.koin.dsl.module
 class ImageViewModel(
     private val urls: List<String>,
     private val application: Application,
-    index: Int,
-    url: String,
+    val index: Int,
+    val url: String,
 ): AndroidViewModel(application), KoinComponent {
 
     private val notificationsManager: NotificationsManager by inject()
+    private val connectionManager: ConnectionManager by inject()
 
     private val handler = CoroutineExceptionHandler { _, exception -> showError(application, viewModelScope, exception)}
 
@@ -56,7 +58,7 @@ class ImageViewModel(
             Toast.makeText(application, throwable.message.toString(), Toast.LENGTH_LONG).show()
         }
     }
-    private val _imageExceptionHandler = imageExceptionHandler(imageLoadFail, unknownFail)
+    private val _imageExceptionHandler = imageExceptionHandler(imageLoadFail, unknownFail, connectionManager)
 
     init {
         loadOriginalImageFromDisk(index, url)

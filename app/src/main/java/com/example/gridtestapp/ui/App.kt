@@ -4,6 +4,7 @@ import android.app.Application
 import com.example.gridtestapp.core.NotificationsManager
 import com.example.gridtestapp.core.LocalRepo
 import com.example.gridtestapp.core.cache.ImageLoader
+import com.example.gridtestapp.core.connection.ConnectionManager
 import com.example.gridtestapp.logic.viewmodels.AddImageViewModel
 import com.example.gridtestapp.logic.viewmodels.MainViewModel
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
@@ -25,13 +26,16 @@ class App: Application(), KoinComponent {
             androidContext(this@App)
             modules(
                 Routes.module,
+                NotificationsManager.module,
+                ConnectionManager.module,
+                ImageLoader.module,
+
+                LocalRepo.module,
+
                 MainViewModel.module,
                 ImageViewModel.module,
                 AppViewModel.module,
-                NotificationsManager.module,
-                ImageLoader.module,
                 AddImageViewModel.module,
-                LocalRepo.module,
             )
         }
     }

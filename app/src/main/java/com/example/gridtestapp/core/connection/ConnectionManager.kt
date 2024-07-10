@@ -10,13 +10,16 @@ import com.example.gridtestapp.logic.viewmodels.AppViewModel.Companion.MAIN_URL
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.update
+import org.koin.core.component.KoinComponent
+import org.koin.dsl.module
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
 
-object ConnectionManager {
+class ConnectionManager(private val application: Application): KoinComponent {
 
     var online: Boolean = true
 
@@ -24,12 +27,12 @@ object ConnectionManager {
     val state: Flow<ConnectionState>
         get() = _state.runningFold(initial = ConnectionState(true, true)) { a, b -> ConnectionState(a.current, b) }
 
-    suspend fun init(application: Application) {
+    suspend fun init() {
         initConnectivity(application)
         startPinger()
     }
 
-    private suspend fun startPinger() {
+    private suspend fun startPinger(): Nothing {
         while (true) {
             delay(15_000) // 15 seconds
             checkSiteUrl()
@@ -78,6 +81,19 @@ object ConnectionManager {
 
         val connectivityManager = getSystemService(application, ConnectivityManager::class.java) as ConnectivityManager
         connectivityManager.requestNetwork(networkRequest, networkCallback)
+    }
+
+    suspend fun listen(onRestore: () -> Unit) {
+        return state
+            .filter { connectionState ->
+                !connectionState.previous && connectionState.current
+            }.collect { onRestore() }
+    }
+
+    companion object {
+        val module = module {
+            single { ConnectionManager(get()) }
+        }
     }
 
 }
