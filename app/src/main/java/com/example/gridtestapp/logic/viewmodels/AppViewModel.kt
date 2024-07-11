@@ -31,6 +31,7 @@ import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
 import com.example.gridtestapp.logic.events.GotUrlIntent
+import com.example.gridtestapp.logic.events.ImagePressed
 import com.example.gridtestapp.logic.events.ImageScreenEvent
 import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.MainScreenEvent
@@ -324,6 +325,13 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is UpdateCurrentImage -> _state.update { it.copy(currentImage = AppState.ImagePair(event.url, event.index)) }
             is GotUrlIntent -> navigateToAddImage(event.url)
             is AddImage -> addImageToTop(event.url)
+            is ImagePressed -> imagePressed(event.url, event.index)
+        }
+    }
+
+    private fun imagePressed(url: String, index: Int) {
+        if (!get<Routes>().isImage()) {
+            get<Routes>().navigate(Routes.imageRoute(url, index))
         }
     }
 

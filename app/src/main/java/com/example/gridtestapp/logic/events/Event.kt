@@ -24,6 +24,7 @@ data object Reload : AppEvent()
 data class GotUrlIntent(val url: String) : AppEvent()
 data class UpdateCurrentImage(val url: String, val index: Int) : AppEvent()
 data class AddImage(val url: String) : AppEvent()
+data class ImagePressed(val url: String, val index: Int) : AppEvent()
 
 
 // События основного экрана

@@ -1,9 +1,17 @@
+@file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalAnimationSpecApi::class)
+
 package com.example.gridtestapp.ui.screens
 
 import android.os.Build
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.core.ArcMode
+import androidx.compose.animation.core.ExperimentalAnimationSpecApi
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,11 +36,13 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat.getString
 import com.example.gridtestapp.R
 import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
+import com.example.gridtestapp.logic.events.ImagePressed
 import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
 import com.example.gridtestapp.logic.states.LoadState
@@ -43,6 +53,8 @@ import com.example.gridtestapp.ui.composables.ImageFailDialog
 import com.example.gridtestapp.ui.composables.ImageLoader
 import com.example.gridtestapp.ui.composables.Loader
 import com.example.gridtestapp.ui.navigation.Routes
+import com.example.gridtestapp.ui.other.Hero
+import com.example.gridtestapp.ui.other.animationDuration
 import com.example.gridtestapp.ui.theme.DarkColorScheme
 import com.example.gridtestapp.ui.theme.LightColorScheme
 import com.robertlevonyan.compose.buttontogglegroup.RowToggleButtonGroup
@@ -57,6 +69,7 @@ import org.koin.androidx.compose.get
 fun MainContent(
     paddingValues: PaddingValues,
     appViewModel: AppViewModel = get(),
+    hero: Hero,
 ) {
     val appState = appViewModel.state.collectAsState()
 
@@ -82,11 +95,10 @@ fun MainContent(
                 Loader()
             } else {
                 val routes = get<Routes>()
-                ImageGrid(appViewModel = appViewModel) { url, index ->
-                    if (!routes.isImage()) {
-                        routes.navigate(Routes.imageRoute(url, index))
-                    }
-                }
+                ImageGrid(
+                    appViewModel = appViewModel,
+                    hero = hero,
+                )
             }
         }
     }
@@ -141,13 +153,12 @@ fun ToggleButtons(
     }
 }
 
-
 @Composable
 fun ImageGrid(
     appViewModel: AppViewModel = get(),
     mainViewModel: MainViewModel = get(),
-    toImageScreen: (url: String, index: Int,
-) -> Unit) {
+    hero: Hero,
+) {
 
     val appState = appViewModel.state.collectAsState()
 
@@ -163,58 +174,89 @@ fun ImageGrid(
         }
     }
 
-    LazyVerticalGrid(
-        state = gridState,
-        modifier = Modifier.fillMaxSize(),
-        columns = GridCells.Adaptive(100.dp),
+    Box(
+        modifier = Modifier
     ) {
-        itemsIndexed(
-            appState.value.urls.toList(),
-            key = { index, url -> "$index. $url" }
-        ) { index, url ->
+        LazyVerticalGrid(
+            state = gridState,
+            modifier = Modifier.fillMaxSize(),
+            columns = GridCells.Adaptive(100.dp),
+        ) {
+            itemsIndexed(
+                appState.value.urls.toList(),
+                key = { index, url -> "$index. $url" }
+            ) { index, url ->
 
-            LaunchedEffect(index) {
-                indexesOnScreen.add(index)
-                appViewModel.onEvent(ChangeVisibleIndexes(indexesOnScreen, index))
-            }
-            DisposableEffect(index) {
-                onDispose {
-                    indexesOnScreen.remove(index)
-                    appViewModel.onEvent(ChangeVisibleIndexes(indexesOnScreen, null))
+                LaunchedEffect(index) {
+                    indexesOnScreen.add(index)
+                    appViewModel.onEvent(ChangeVisibleIndexes(indexesOnScreen, index))
                 }
-            }
-
-            when (appState.value.previewUrlStates[url]) {
-                LoadState.LOADED -> {
-                    val imageBitmap = MemoryManager.getPreviewBitmap(url)
-                    if (imageBitmap != null) {
-                        Image(
-                            painter = BitmapPainter(imageBitmap),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .aspectRatio(1.0f)
-                                .padding(2.dp)
-                                .clickable(onClick = {
-                                    toImageScreen(url, index)
-                                })
-                        )
-                    } else {
-                        Box(modifier = Modifier.aspectRatio(1.0f)) {}
+                DisposableEffect(index) {
+                    onDispose {
+                        indexesOnScreen.remove(index)
+                        appViewModel.onEvent(ChangeVisibleIndexes(indexesOnScreen, null))
                     }
                 }
-                LoadState.IDLE,
-                LoadState.LOADING -> { ImageLoader() }
-                LoadState.FAIL -> { FailBox(url, appViewModel = appViewModel) }
-                else -> {}
-            }
 
-            ImageFailDialog(
-                appState.value.showImageFailDialog.isSome { it == url },
-                appState.value.imageErrors[url],
-                appViewModel = appViewModel,
-                onLoadAgain = { appViewModel.onEvent(LoadImageAgain(url)) }
-            )
+                when (appState.value.previewUrlStates[url]) {
+                    LoadState.LOADED -> {
+                        val imageBitmap = MemoryManager.getPreviewBitmap(url)
+                        if (imageBitmap != null) {
+                            with(hero.sharedTransitionScope) {
+                                val sharedContentState = rememberSharedContentState(key = index)
+                                val interactionSource = remember { MutableInteractionSource() }
+                                Image(
+                                    painter = BitmapPainter(imageBitmap),
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .zIndex(if (appState.value.currentImage?.index == index) { 1F } else { 0F })
+                                        .sharedBounds(
+                                            sharedContentState,
+                                            animatedVisibilityScope = hero.animatedScope,
+                                            renderInOverlayDuringTransition = false,
+                                            boundsTransform = { initialBounds, targetBounds ->
+                                                keyframes {
+                                                    durationMillis = animationDuration
+                                                    initialBounds at 0 using ArcMode.ArcBelow using FastOutSlowInEasing
+                                                    targetBounds at animationDuration
+                                                }
+                                            }
+                                        )
+                                        .aspectRatio(1.0f)
+                                        .padding(2.dp)
+                                        .clickable(
+                                            interactionSource,
+                                            indication = null,
+                                            onClick = {
+                                            appViewModel.onEvent(ImagePressed(url, index))
+                                        })
+                                )
+                            }
+                        } else {
+                            Box(modifier = Modifier.aspectRatio(1.0f)) {}
+                        }
+                    }
+
+                    LoadState.IDLE,
+                    LoadState.LOADING -> {
+                        ImageLoader()
+                    }
+
+                    LoadState.FAIL -> {
+                        FailBox(url, appViewModel = appViewModel)
+                    }
+
+                    else -> {}
+                }
+
+                ImageFailDialog(
+                    appState.value.showImageFailDialog.isSome { it == url },
+                    appState.value.imageErrors[url],
+                    appViewModel = appViewModel,
+                    onLoadAgain = { appViewModel.onEvent(LoadImageAgain(url)) }
+                )
+            }
         }
     }
 }
