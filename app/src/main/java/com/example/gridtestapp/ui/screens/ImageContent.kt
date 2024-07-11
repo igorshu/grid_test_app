@@ -106,7 +106,6 @@ fun ImageContent(
                                     Modifier.aspectRatio(previewImage.width.toFloat() / previewImage.height)
                                 } else Modifier
                             )
-
                             .sharedBounds(
                                 sharedContentState,
                                 animatedVisibilityScope = hero.animatedScope,
@@ -153,7 +152,6 @@ fun ImageContent(
                                 Box(modifier = Modifier.aspectRatio(1.0f)) {}
                             }
                         } else {
-                            val previewImage = MemoryManager.getPreviewBitmap(url)
                             val previewUrlState = appState.value.previewUrlStates[url]
                             if (previewUrlState == LOADED && previewImage != null) {
                                 Image(
@@ -162,6 +160,11 @@ fun ImageContent(
                                     modifier = Modifier
                                         .fillMaxSize()
                                 )
+                                LaunchedEffect(key1 = url) {
+                                    imageViewModel.onEvent(
+                                        LoadOriginalImageFromDisk(url, index)
+                                    )
+                                }
                             } else if (previewUrlState == FAIL) {
                                 FailBox(url, appViewModel = appViewModel)
                             } else {
