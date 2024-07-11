@@ -88,7 +88,7 @@ fun ImageContent(
 
                 val urlState = imageState.value.originalUrlStates[url]
 
-                val sharedContentState = rememberSharedContentState(key = index)
+                val sharedContentState = rememberSharedContentState(key = "$index $url")
 
                 Box(
                     modifier = Modifier
@@ -98,10 +98,10 @@ fun ImageContent(
                 ) {
 
                     val previewImage = MemoryManager.getPreviewBitmap(url)
-                    Box( // Общий
+                    Box( // Общий, нужен для анимации перехода
                         modifier = Modifier
                             .fillMaxWidth()
-                            .then (
+                            .then(
                                 if (previewImage != null) {
                                     Modifier.aspectRatio(previewImage.width.toFloat() / previewImage.height)
                                 } else Modifier
@@ -187,6 +187,8 @@ fun ImageContent(
                     onLoadAgain = { appViewModel.onEvent(LoadImageAgain(url)) }
                 )
             }
+        } else {
+            Box(modifier = Modifier.fillMaxSize()) // чтобы не было странного поведения при удалении
         }
     }
 }

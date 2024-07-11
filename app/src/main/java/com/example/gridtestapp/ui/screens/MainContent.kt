@@ -203,7 +203,7 @@ fun ImageGrid(
                         val imageBitmap = MemoryManager.getPreviewBitmap(url)
                         if (imageBitmap != null) {
                             with(hero.sharedTransitionScope) {
-                                val sharedContentState = rememberSharedContentState(key = index)
+                                val sharedContentState = rememberSharedContentState(key = "$index $url")
                                 val interactionSource = remember { MutableInteractionSource() }
                                 Image(
                                     painter = BitmapPainter(imageBitmap),
