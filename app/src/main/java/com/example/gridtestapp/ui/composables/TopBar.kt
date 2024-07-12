@@ -1,6 +1,8 @@
 package com.example.gridtestapp.ui.composables
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -40,9 +42,6 @@ fun TopBar(
     val windowInsets = TopAppBarDefaults.windowInsets
     val density = LocalDensity.current
 
-    val initialTop = windowInsets.getTop(density)
-    val top = remember { initialTop}
-
     val showTopBar by remember {
         derivedStateOf {
             appState.value.showTopBar
@@ -53,78 +52,92 @@ fun TopBar(
         val layoutDirection = LayoutDirection.Ltr
         val insets = WindowInsets(
             left = windowInsets.getLeft(density, layoutDirection),
-            top = top,
+            top = 0,
             right = windowInsets.getRight(density, layoutDirection),
             bottom = windowInsets.getBottom(density),
             )
-        TopAppBar(
-            modifier = Modifier,
-            windowInsets = insets,
-            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                navigationIconContentColor = Color.White,
-                titleContentColor = Color.White,
-                containerColor = MaterialTheme.colorScheme.tertiary,
-            ),
-            title = { Text(appState.value.title, maxLines = 1) },
-            navigationIcon = {
-                val showBack by remember {
-                    derivedStateOf {
-                        appState.value.showBack
+        Box(
+            modifier = Modifier
+                .statusBarsPadding()
+        ) {
+            TopAppBar(
+                modifier = Modifier,
+                windowInsets = insets,
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    navigationIconContentColor = Color.White,
+                    titleContentColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.tertiary,
+                ),
+                title = { Text(appState.value.title, maxLines = 1) },
+                navigationIcon = {
+                    val showBack by remember {
+                        derivedStateOf {
+                            appState.value.showBack
+                        }
                     }
-                }
-                if (showBack) {
-                    val routes = get<Routes>()
-                    IconButton(onClick = { routes.goBack() }) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Go back"
-                        )
-                    }
-                }
-            },
-            actions = {
-                val currentScreen by remember {
-                    derivedStateOf {
-                        appState.value.currentScreen
-                    }
-                }
-                when (currentScreen) {
-                    Screen.MAIN -> {
-                        IconButton(onClick = { appViewModel.onEvent(Reload) }) {
+                    if (showBack) {
+                        val routes = get<Routes>()
+                        IconButton(onClick = { routes.goBack() }) {
                             Icon(
-                                imageVector = Icons.Filled.Refresh,
-                                contentDescription = "Share",
-                                tint = Color.White
+                                imageVector = Icons.Filled.ArrowBack,
+                                contentDescription = "Go back"
                             )
                         }
                     }
-                    Screen.IMAGE -> {
-                        IconButton(onClick = {
-                            appState.value.currentImage?.let { imagePair ->
-                                appViewModel.onEvent(RemoveImage(imagePair.url, imagePair.index))
+                },
+                actions = {
+                    val currentScreen by remember {
+                        derivedStateOf {
+                            appState.value.currentScreen
+                        }
+                    }
+                    when (currentScreen) {
+                        Screen.MAIN -> {
+                            IconButton(onClick = { appViewModel.onEvent(Reload) }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Refresh,
+                                    contentDescription = "Share",
+                                    tint = Color.White
+                                )
                             }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.Delete,
-                                contentDescription = "Delete",
-                                tint = Color.White
-                            )
                         }
-                        IconButton(onClick = {
-                            appState.value.currentImage?.let { imagePair ->
-                                appViewModel.onEvent(SharePressed(imagePair.url))
+
+                        Screen.IMAGE -> {
+                            IconButton(onClick = {
+                                appState.value.currentImage?.let { imagePair ->
+                                    appViewModel.onEvent(
+                                        RemoveImage(
+                                            imagePair.url,
+                                            imagePair.index
+                                        )
+                                    )
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Delete,
+                                    contentDescription = "Delete",
+                                    tint = Color.White
+                                )
                             }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Filled.Share,
-                                contentDescription = "Share",
-                                tint = Color.White
-                            )
+                            IconButton(onClick = {
+                                appState.value.currentImage?.let { imagePair ->
+                                    appViewModel.onEvent(SharePressed(imagePair.url))
+                                }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Share,
+                                    contentDescription = "Share",
+                                    tint = Color.White
+                                )
+                            }
                         }
+
+                        Screen.ADD_IMAGE -> {}
                     }
-                    Screen.ADD_IMAGE -> {}
                 }
-            }
-        )
+            )
+        }
+    } else {
+        Box {}
     }
 }

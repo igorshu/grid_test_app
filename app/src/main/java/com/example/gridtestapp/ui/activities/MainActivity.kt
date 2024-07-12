@@ -125,7 +125,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
                     darkTheme = theme.isDark(systemTheme = isSystemInDarkTheme())
                 ) {
                     Scaffold(
-                        topBar = { TopBar(appViewModel = appViewModel) },
+                        topBar = { TopBar() },
                     ) { paddingValues ->
 
                         LifecycleResumeEffect(Unit) {
@@ -172,6 +172,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
                                                 this@composable,
                                                 this@SharedTransitionLayout
                                             ),
+                                            paddingValues = paddingValues,
                                         )
                                     } else {
                                         val params = mutableListOf<String>()

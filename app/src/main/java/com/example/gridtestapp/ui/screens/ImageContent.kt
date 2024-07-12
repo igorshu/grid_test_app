@@ -10,9 +10,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.layout.ContentScale
 import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
@@ -61,6 +63,7 @@ fun ImageContent(
     appViewModel: AppViewModel = get(),
     imageViewModel: ImageViewModel = koinViewModel(parameters = { parametersOf(urls, index, url) }),
     hero: Hero,
+    paddingValues: PaddingValues,
 ) {
 
     val imageState = imageViewModel.state.collectAsState()
@@ -82,6 +85,10 @@ fun ImageContent(
                 appViewModel.onEvent(UpdateCurrentImage(currentUrl, currentPage))
             }
 
+            val imagePadding = remember {
+                paddingValues
+            }
+
             HorizontalPager(state = pagerState) { index ->
                 val url = urls[index]
 
@@ -99,12 +106,8 @@ fun ImageContent(
                     val previewImage = MemoryManager.getPreviewBitmap(url)
                     Box( // Общий, нужен для анимации перехода
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .then(
-                                if (previewImage != null) {
-                                    Modifier.aspectRatio(previewImage.width.toFloat() / previewImage.height)
-                                } else Modifier
-                            )
+                            .fillMaxSize()
+                            .padding(imagePadding)
                             .sharedBounds(
                                 sharedContentState,
                                 animatedVisibilityScope = hero.animatedScope,
@@ -137,6 +140,7 @@ fun ImageContent(
                                 Image(
                                     painter = painter,
                                     contentDescription = null,
+                                    contentScale = ContentScale.Fit,
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .clickable(
