@@ -4,9 +4,7 @@ package com.example.gridtestapp.ui.screens
 
 import android.os.Build
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.core.ArcMode
 import androidx.compose.animation.core.ExperimentalAnimationSpecApi
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -55,6 +53,7 @@ import com.example.gridtestapp.ui.composables.Loader
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.other.Hero
 import com.example.gridtestapp.ui.other.animationDuration
+import com.example.gridtestapp.ui.other.easing
 import com.example.gridtestapp.ui.theme.DarkColorScheme
 import com.example.gridtestapp.ui.theme.LightColorScheme
 import com.robertlevonyan.compose.buttontogglegroup.RowToggleButtonGroup
@@ -153,6 +152,7 @@ fun ToggleButtons(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ImageGrid(
     appViewModel: AppViewModel = get(),
@@ -218,10 +218,11 @@ fun ImageGrid(
                                             boundsTransform = { initialBounds, targetBounds ->
                                                 keyframes {
                                                     durationMillis = animationDuration
-                                                    initialBounds at 0 using ArcMode.ArcBelow using FastOutSlowInEasing
+                                                    initialBounds at 0 using easing(appState.value.currentScreen)
                                                     targetBounds at animationDuration
                                                 }
-                                            }
+                                            },
+
                                         )
                                         .aspectRatio(1.0f)
                                         .padding(2.dp)

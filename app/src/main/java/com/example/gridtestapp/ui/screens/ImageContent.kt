@@ -3,9 +3,7 @@
 package com.example.gridtestapp.ui.screens
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.core.ArcMode
 import androidx.compose.animation.core.ExperimentalAnimationSpecApi
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -40,6 +38,7 @@ import com.example.gridtestapp.ui.composables.ImageFailDialog
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.other.Hero
 import com.example.gridtestapp.ui.other.animationDuration
+import com.example.gridtestapp.ui.other.easing
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
 import org.koin.androidx.compose.get
@@ -113,10 +112,10 @@ fun ImageContent(
                                 boundsTransform = { initialBounds, targetBounds ->
                                     keyframes {
                                         durationMillis = animationDuration
-                                        initialBounds at 0 using ArcMode.ArcBelow using FastOutSlowInEasing
+                                        initialBounds at 0 using easing(appState.value.currentScreen)
                                         targetBounds at animationDuration
                                     }
-                                }
+                                },
                             ),
                         contentAlignment = Alignment.Center
                     ) {
