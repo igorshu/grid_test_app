@@ -68,14 +68,14 @@ fun ImageContent(
     paddingValues: PaddingValues,
 ) {
 
-    val imageState = imageViewModel.state.collectAsState()
-    val appState = appViewModel.state.collectAsState()
+    val imageState = imageViewModel.state.collectAsState().value
+    val appState = appViewModel.state.collectAsState().value
 
     with(hero.sharedTransitionScope) {
 
-        if (!appState.value.hideImage) {
+        if (!appState.hideImage) {
             val pagerState = rememberPagerState(
-                initialPage = imageState.value.index,
+                initialPage = imageState.index,
                 pageCount = { urls.size }
             )
 
@@ -94,9 +94,10 @@ fun ImageContent(
             HorizontalPager(state = pagerState) { index ->
                 val url = urls[index]
 
-                val urlState = imageState.value.originalUrlStates[url]
-
                 val sharedContentState = rememberSharedContentState(key = "$index $url")
+
+                val urlState = imageState.originalUrlStates[url]
+                val itemImageState = appState.imageStates[url]
 
                 Box(
                     modifier = Modifier
@@ -109,7 +110,7 @@ fun ImageContent(
                             .padding(imagePadding),
                         contentAlignment = Alignment.Center
                     ) {
-                        val previewUrlState = appState.value.previewUrlStates[url]
+                        val previewUrlState = itemImageState?.previewState
                         if (urlState == LOADED || previewUrlState == LOADED) {
                             val originalImage = MemoryManager.getOriginalBitmap(url)
                             val previewImage = MemoryManager.getPreviewBitmap(url)
@@ -156,7 +157,6 @@ fun ImageContent(
                                         ) {
                                             appViewModel.onEvent(ToggleFullScreen)
                                         }
-                                        .zoomable(zoomState)
                                         .sharedBounds(
                                             sharedContentState,
                                             animatedVisibilityScope = hero.animatedScope,
@@ -164,11 +164,12 @@ fun ImageContent(
                                             boundsTransform = { initialBounds, targetBounds ->
                                                 keyframes {
                                                     durationMillis = animationDuration
-                                                    initialBounds at 0 using easing(appState.value.currentScreen)
+                                                    initialBounds at 0 using easing(appState.currentScreen)
                                                     targetBounds at animationDuration
                                                 }
                                             },
-                                        ),
+                                        )
+                                        .zoomable(zoomState),
                                 )
                             } else {
                                 Box(modifier = Modifier.aspectRatio(1.0f)) {}
@@ -193,8 +194,8 @@ fun ImageContent(
                     }
                 }
                 ImageFailDialog(
-                    appState.value.showImageFailDialog.isSome { it == url },
-                    appState.value.imageErrors[url],
+                    url,
+                    appState,
                     appViewModel = appViewModel,
                     onLoadAgain = { appViewModel.onEvent(LoadImageAgain(url)) }
                 )

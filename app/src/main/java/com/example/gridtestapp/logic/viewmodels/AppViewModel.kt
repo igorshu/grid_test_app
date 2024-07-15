@@ -5,6 +5,8 @@ import android.content.ComponentName
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.runtime.toMutableStateList
+import androidx.compose.runtime.toMutableStateMap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -45,6 +47,7 @@ import com.example.gridtestapp.logic.events.ToggleFullScreen
 import com.example.gridtestapp.logic.events.UpdateCurrentImage
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.states.ImageError
+import com.example.gridtestapp.logic.states.ImageState
 import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.Screen
 import com.example.gridtestapp.logic.states.Theme
@@ -87,11 +90,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     val state: StateFlow<AppState> = _state.asStateFlow()
 
     private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad ->
-        _state.update {
-            val loadedUrls = it.previewUrlStates.toMutableMap().apply { put(url, LoadState.FAIL) }
-            val imageErrors = it.imageErrors.toMutableMap().apply { put(url, ImageError(errorMessage, canBeLoad)) }
-            it.copy(previewUrlStates = loadedUrls, imageErrors = imageErrors)
-        }
+        _state.value.imageStates[url] = ImageState(ImageError(errorMessage, canBeLoad), LoadState.FAIL)
     }
 
     private val unknownFail: UnknownFail = { throwable ->
@@ -117,7 +116,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     private fun loadLinks() {
-        val urls = localRepo.urls ?: run {
+        val urls = (localRepo.urls ?: run {
             val request: Request = Request.Builder()
                 .url(MAIN_URL)
                 .build()
@@ -129,24 +128,18 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             txt.lines().apply {
                 localRepo.urls = this
             }
-        }
+        }).toMutableStateList()
 
-        _state.update { it.copy(urls = urls) }
+        val imageStates = urls.map { url -> url to ImageState( null, LoadState.IDLE) }.toMutableStateMap()
 
-        urls.forEach { url ->
-            _state.update {
-                it.copy(previewUrlStates = it.previewUrlStates.toMutableMap().apply { put(url, LoadState.IDLE) })
-            }
-        }
+        _state.update { it.copy(urls = urls, imageStates = imageStates) }
     }
 
     private suspend fun loadImage(url: String) {
         imageLoader.loadImage(
             url,
             onLoading = { url ->
-                _state.update {
-                    it.copy(previewUrlStates = it.previewUrlStates.toMutableMap().apply { put(url, LoadState.LOADING) })
-                }
+                _state.value.imageStates[url] = ImageState(null, LoadState.LOADING)
             },
             onLoaded = { url ->
                 setLoadedState(url)
@@ -159,12 +152,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         if (bitmap != null) {
 
             MemoryManager.addPreviewBitmap(url, bitmap)
-
-            _state.update {
-                return@update it.copy(
-                    previewUrlStates = it.previewUrlStates.toMutableMap().apply { put(url, LoadState.LOADED) }
-                )
-            }
+            _state.value.imageStates[url] = ImageState(null, LoadState.LOADED)
         }
     }
 
@@ -177,7 +165,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     private fun loadPreviewFromMemory(url: String) {
         viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
             if (!MemoryManager.previewExists(url)) {
-                if (state.value.previewUrlStates[url] == LoadState.IDLE) {
+                if (state.value.imageStates[url]?.previewState == LoadState.IDLE) {
                     loadImage(url)
                 }
             }
@@ -195,29 +183,34 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             return
         }
 
+        val urls = state.value.urls
+
         val screenRange = indexesOnScreen.first()..indexesOnScreen.last()
         val preloadOffset = (indexesOnScreen.size * Settings.PREVIEW_PRELOAD / 2).roundToInt()
-        val preloadRange = max(0, indexesOnScreen.first() - preloadOffset)..min(state.value.urls.size - 1, indexesOnScreen.last() + preloadOffset)
+        val preloadRange = max(0, indexesOnScreen.first() - preloadOffset)..min(urls.size - 1, indexesOnScreen.last() + preloadOffset)
 
-        var outerImageUrls = state.value.urls.filterIndexed { index, url ->
+        var outerImageUrls = urls.filterIndexed { index, url ->
             index !in preloadRange
         }
 
-        val innerImageUrls = state.value.urls.slice(preloadRange)
+        val innerImageUrls = urls.slice(preloadRange)
         outerImageUrls = outerImageUrls.filterNot { url ->
             url in innerImageUrls
         }
 
-        _state.update {
-            val urlStates = it.previewUrlStates.toMutableMap()
-            outerImageUrls.forEach { url ->
-                MemoryManager.removePreviewBitmap(url)
+        outerImageUrls.forEach { url ->
+            MemoryManager.removePreviewBitmap(url)
 
-                if (urlStates[url] != LoadState.FAIL && urlStates[url] != LoadState.LOADING) {
-                    urlStates[url] = LoadState.IDLE
+            val imageState = _state.value.imageStates[url]
+            if (imageState != null) {
+                val previewState = imageState.previewState
+                if (previewState != LoadState.FAIL && previewState != LoadState.LOADING && previewState != LoadState.IDLE) {
+                    _state.value.imageStates[url] = ImageState(null, LoadState.IDLE)
                 }
             }
-            it.copy(previewUrlStates = urlStates, screenRange = screenRange, preloadRange = preloadRange)
+        }
+        _state.update {
+            it.copy(screenRange = screenRange, preloadRange = preloadRange)
         }
     }
 
@@ -237,19 +230,15 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             return
         }
 
-        val newState = _state.updateAndGet {
-            val urlStates = it.previewUrlStates.entries.associate { entry ->
-                if (entry.value == LoadState.LOADING || entry.value == LoadState.FAIL) {
-                    entry.key to LoadState.IDLE
-                } else {
-                    entry.toPair()
-                }
+        _state.value.imageStates.keys.forEach { url ->
+            val imageState = _state.value.imageStates[url]
+            if (imageState?.previewState == LoadState.LOADING || imageState?.previewState == LoadState.FAIL) {
+                _state.value.imageStates[url] = ImageState(null, LoadState.IDLE)
             }
-
-            it.copy(previewUrlStates = urlStates)
         }
 
-        newState
+        state
+            .value
             .urls
             .subList(state.value.preloadRange.first, state.value.preloadRange.last)
             .forEach { url ->
@@ -258,7 +247,6 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     val onEvent: OnAppEvent = { event ->
-//        Log.d("AppViewModel.onEvent", event.toString())
         when (event) {
             is ToggleFullScreen -> _state.update {
                 if (it.currentScreen in setOf(Screen.IMAGE, Screen.ADD_IMAGE)) {
@@ -307,7 +295,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is ChangeVisibleIndexes -> {
                 updateOuterPreviewsJob?.cancel()
                 updateOuterPreviewsJob = viewModelScope.launch {
-                    delay(100)
+                    delay(10)
                     if (isActive) {
                         updateOuterPreviews(event.indexesOnScreen.sorted())
                     }
@@ -353,12 +341,10 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
     private fun addImageToTop(url: String) {
         viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
-            val newState = _state.updateAndGet {
-                val urls = it.urls.toMutableList().apply {
-                    remove(url)
-                    add(0, url)
-                }
-                it.copy(urls = urls)
+
+            _state.value.urls.apply {
+                remove(url)
+                add(0, url)
             }
 
             if (CacheManager.isCached(url)) {
@@ -366,16 +352,11 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 if (bitmap != null) {
                     MemoryManager.addPreviewBitmap(url, bitmap)
 
-                    _state.update {
-                        val previewUrlStates = it.previewUrlStates.toMutableMap().apply {
-                            put(url, LoadState.LOADED)
-                        }
-                        it.copy(previewUrlStates = previewUrlStates)
-                    }
+                    _state.value.imageStates[url] = ImageState(null, LoadState.LOADED)
                 }
             }
 
-            localRepo.urls = newState.urls
+            localRepo.urls = _state.value.urls
 
             if (state.value.currentScreen == Screen.ADD_IMAGE) {
                 viewModelScope.launch(handler + Dispatchers.Main) {
@@ -387,24 +368,18 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
     private fun removeImage(url: String, index: Int) {
         viewModelScope.launch(handler + Dispatchers.IO) {
-            val newState = _state.updateAndGet {
-                val urls = it.urls.toMutableList().apply { removeAt(index = index) }
-                it.copy(urls = urls)
+            _state.value.urls.apply {
+                removeAt(index)
             }
 
-            if (newState.urls.indexOf(url) < 0) {
-                MemoryManager.removeBothImages(url)
-                CacheManager.removeBothImages(url)
-                _state.update {
-                    val previewUrlStates = it.previewUrlStates.toMutableMap().apply { remove(url) }
-                    it.copy(
-                        urls = newState.urls,
-                        previewUrlStates = previewUrlStates,
-                        hideImage = true)
-                }
-            }
+            MemoryManager.removeBothImages(url)
+            CacheManager.removeBothImages(url)
 
-            localRepo.urls = newState.urls
+            _state.value.imageStates.remove(url)
+
+            _state.update { it.copy(hideImage = true) }
+
+            localRepo.urls = _state.value.urls
 
             viewModelScope.launch(handler + Dispatchers.Main) {
                 get<Routes>().navigate(Routes.MAIN)

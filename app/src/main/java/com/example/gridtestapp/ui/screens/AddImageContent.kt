@@ -51,10 +51,10 @@ fun AddImageContent(
     appViewModel: AppViewModel = get(),
 ) {
 
-    val state = addImageViewModel.state.collectAsState()
-    val appState = appViewModel.state.collectAsState()
+    val state = addImageViewModel.state.collectAsState().value
+    val appState = appViewModel.state.collectAsState().value
 
-    if (state.value.loadState == LoadState.LOADED) {
+    if (state.loadState == LoadState.LOADED) {
         val originalImage = remember {
             MemoryManager.getOriginalBitmap(url)
         }
@@ -112,7 +112,7 @@ fun AddImageContent(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            val urlState = state.value.loadState
+            val urlState = state.loadState
             if (urlState == FAIL) {
                 FailBox(url, appViewModel = appViewModel)
             } else {
@@ -128,8 +128,8 @@ fun AddImageContent(
             }
         }
         ImageFailDialog(
-            appState.value.showImageFailDialog.isSome { it == url },
-            state.value.imageError,
+            url,
+            appState,
             appViewModel = appViewModel,
             onLoadAgain = { addImageViewModel.onAppEvent(LoadImageAgain(url)) }
         )

@@ -1,5 +1,9 @@
 package com.example.gridtestapp.logic.states
 
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import arrow.core.None
 import arrow.core.Option
 
@@ -18,10 +22,9 @@ enum class Theme {
 data class AppState internal constructor (
 
     val theme: Theme,
-    val urls: List<String>,
-    val previewUrlStates: Map<String, LoadState>,
+    val urls: SnapshotStateList<String>, // for url order
+    val imageStates: SnapshotStateMap<String, ImageState>,
     val showImageFailDialog: Option<String>,
-    val imageErrors: Map<String, ImageError>,
     val screenRange: IntRange,
     val preloadRange: IntRange,
     val inetAvailable: Boolean,
@@ -36,10 +39,9 @@ data class AppState internal constructor (
     companion object {
         fun init(title: String): AppState = AppState(
             theme = Theme.BY_DEFAULT,
-            urls = listOf(),
-            previewUrlStates = hashMapOf(),
+            urls = mutableStateListOf(),
+            imageStates = mutableStateMapOf(),
             showImageFailDialog = None,
-            imageErrors = hashMapOf(),
             screenRange = IntRange(0, 0),
             preloadRange = IntRange(0, 0),
             inetAvailable = true,
@@ -54,10 +56,9 @@ data class AppState internal constructor (
     }
 
     fun clear() = copy(
-        urls = listOf(),
-        previewUrlStates = hashMapOf(),
+        urls = mutableStateListOf(),
+        imageStates = mutableStateMapOf(),
         showImageFailDialog = None,
-        imageErrors = hashMapOf(),
         screenRange = IntRange(0, 0),
         preloadRange = IntRange(0, 0),
     )

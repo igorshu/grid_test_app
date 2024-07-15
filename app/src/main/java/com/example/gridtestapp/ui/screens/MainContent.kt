@@ -50,7 +50,6 @@ import com.example.gridtestapp.ui.composables.FailBox
 import com.example.gridtestapp.ui.composables.ImageFailDialog
 import com.example.gridtestapp.ui.composables.ImageLoader
 import com.example.gridtestapp.ui.composables.Loader
-import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.other.Hero
 import com.example.gridtestapp.ui.other.animationDuration
 import com.example.gridtestapp.ui.other.easing
@@ -93,7 +92,6 @@ fun MainContent(
             if (urls.isEmpty()) {
                 Loader()
             } else {
-                val routes = get<Routes>()
                 ImageGrid(
                     appViewModel = appViewModel,
                     hero = hero,
@@ -160,7 +158,7 @@ fun ImageGrid(
     hero: Hero,
 ) {
 
-    val appState = appViewModel.state.collectAsState()
+    val appState = appViewModel.state.collectAsState().value
 
     val indexesOnScreen = remember {
         hashSetOf<Int>()
@@ -183,7 +181,7 @@ fun ImageGrid(
             columns = GridCells.Adaptive(100.dp),
         ) {
             itemsIndexed(
-                appState.value.urls.toList(),
+                appState.urls.toList(),
                 key = { index, url -> "$index. $url" }
             ) { index, url ->
 
@@ -198,7 +196,7 @@ fun ImageGrid(
                     }
                 }
 
-                when (appState.value.previewUrlStates[url]) {
+                when (appState.imageStates[url]?.previewState) {
                     LoadState.LOADED -> {
                         val imageBitmap = MemoryManager.getPreviewBitmap(url)
                         if (imageBitmap != null) {
@@ -210,7 +208,7 @@ fun ImageGrid(
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
-                                        .zIndex(if (appState.value.currentImage?.index == index) { 1F } else { 0F })
+                                        .zIndex(if (appState.currentImage?.index == index) { 1F } else { 0F })
                                         .sharedBounds(
                                             sharedContentState,
                                             animatedVisibilityScope = hero.animatedScope,
@@ -218,7 +216,7 @@ fun ImageGrid(
                                             boundsTransform = { initialBounds, targetBounds ->
                                                 keyframes {
                                                     durationMillis = animationDuration
-                                                    initialBounds at 0 using easing(appState.value.currentScreen)
+                                                    initialBounds at 0 using easing(appState.currentScreen)
                                                     targetBounds at animationDuration
                                                 }
                                             },
@@ -229,9 +227,8 @@ fun ImageGrid(
                                         .clickable(
                                             interactionSource,
                                             indication = null,
-                                            onClick = {
-                                            appViewModel.onEvent(ImagePressed(url, index))
-                                        })
+                                            onClick = { appViewModel.onEvent(ImagePressed(url, index)) },
+                                        )
                                 )
                             }
                         } else {
@@ -247,13 +244,12 @@ fun ImageGrid(
                     LoadState.FAIL -> {
                         FailBox(url, appViewModel = appViewModel)
                     }
-
                     else -> {}
                 }
 
                 ImageFailDialog(
-                    appState.value.showImageFailDialog.isSome { it == url },
-                    appState.value.imageErrors[url],
+                    url,
+                    appState,
                     appViewModel = appViewModel,
                     onLoadAgain = { appViewModel.onEvent(LoadImageAgain(url)) }
                 )
