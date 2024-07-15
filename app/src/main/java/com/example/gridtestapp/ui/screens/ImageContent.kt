@@ -12,7 +12,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -102,34 +104,28 @@ fun ImageContent(
                     ,
                     contentAlignment = Alignment.Center
                 ) {
-
-                    val previewImage = MemoryManager.getPreviewBitmap(url)
-                    Box( // Общий, нужен для анимации перехода
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(imagePadding)
-                            .sharedBounds(
-                                sharedContentState,
-                                animatedVisibilityScope = hero.animatedScope,
-                                renderInOverlayDuringTransition = false,
-                                boundsTransform = { initialBounds, targetBounds ->
-                                    keyframes {
-                                        durationMillis = animationDuration
-                                        initialBounds at 0 using easing(appState.value.currentScreen)
-                                        targetBounds at animationDuration
-                                    }
-                                },
-                            ),
+                            .padding(imagePadding),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (urlState == LOADED) {
-                            val originalImage = remember {
-                                MemoryManager.getOriginalBitmap(url)
-                            }
-                            val interactionSource = remember { MutableInteractionSource() }
+                        val previewUrlState = appState.value.previewUrlStates[url]
+                        if (urlState == LOADED || previewUrlState == LOADED) {
+                            val originalImage = MemoryManager.getOriginalBitmap(url)
+                            val previewImage = MemoryManager.getPreviewBitmap(url)
 
-                            if (originalImage != null) {
-                                val painter = BitmapPainter(originalImage)
+                            val painter = if (originalImage != null) {
+                                BitmapPainter(originalImage)
+                            } else if (previewImage != null) {
+                                LaunchedEffect(key1 = url) {
+                                    imageViewModel.onEvent(LoadOriginalImageFromDisk(url, index))
+                                }
+                                BitmapPainter(previewImage)
+                            } else null
+
+                            if (painter != null) {
+                                val interactionSource = remember { MutableInteractionSource() }
                                 val routes = get<Routes>()
                                 val zoomState = rememberZoomState(
                                     minScale = 0.011f,
@@ -137,12 +133,19 @@ fun ImageContent(
                                     exitScale = 0.6f,
                                     onExit = routes::goBack,
                                 )
+
+                                val ratio = with(painter.intrinsicSize) { width / height }
+                                val modifier = if (ratio > 1) {
+                                    Modifier.aspectRatio(ratio).fillMaxWidth()
+                                } else {
+                                    Modifier.aspectRatio(ratio).fillMaxHeight()
+                                }
+
                                 Image(
                                     painter = painter,
                                     contentDescription = null,
                                     contentScale = ContentScale.Fit,
-                                    modifier = Modifier
-                                        .fillMaxSize()
+                                    modifier = modifier
                                         .clickable(
                                             interactionSource,
                                             indication = null,
@@ -150,25 +153,24 @@ fun ImageContent(
                                             appViewModel.onEvent(ToggleFullScreen)
                                         }
                                         .zoomable(zoomState)
+                                        .sharedBounds(
+                                            sharedContentState,
+                                            animatedVisibilityScope = hero.animatedScope,
+                                            renderInOverlayDuringTransition = false,
+                                            boundsTransform = { initialBounds, targetBounds ->
+                                                keyframes {
+                                                    durationMillis = animationDuration
+                                                    initialBounds at 0 using easing(appState.value.currentScreen)
+                                                    targetBounds at animationDuration
+                                                }
+                                            },
+                                        ),
                                 )
                             } else {
                                 Box(modifier = Modifier.aspectRatio(1.0f)) {}
                             }
                         } else {
-                            val previewUrlState = appState.value.previewUrlStates[url]
-                            if (previewUrlState == LOADED && previewImage != null) {
-                                Image(
-                                    painter = BitmapPainter(previewImage),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                )
-                                LaunchedEffect(key1 = url) {
-                                    imageViewModel.onEvent(
-                                        LoadOriginalImageFromDisk(url, index)
-                                    )
-                                }
-                            } else if (previewUrlState == FAIL) {
+                            if (previewUrlState == FAIL || urlState == FAIL) {
                                 FailBox(url, appViewModel = appViewModel)
                             } else {
                                 Box(
