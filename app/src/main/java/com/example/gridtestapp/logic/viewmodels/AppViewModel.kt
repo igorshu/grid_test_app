@@ -294,7 +294,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             }
             is ChangeVisibleIndexes -> {
                 updateOuterPreviewsJob?.cancel()
-                updateOuterPreviewsJob = viewModelScope.launch {
+                updateOuterPreviewsJob = viewModelScope.launch(Dispatchers.Default) {
                     delay(10)
                     if (isActive) {
                         updateOuterPreviews(event.indexesOnScreen.sorted())
