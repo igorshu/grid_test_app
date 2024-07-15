@@ -25,6 +25,7 @@ data class GotUrlIntent(val url: String) : AppEvent()
 data class UpdateCurrentImage(val url: String, val index: Int) : AppEvent()
 data class AddImage(val url: String) : AppEvent()
 data class ImagePressed(val url: String, val index: Int) : AppEvent()
+data object GoBackFromImage : AppEvent()
 
 
 // События основного экрана

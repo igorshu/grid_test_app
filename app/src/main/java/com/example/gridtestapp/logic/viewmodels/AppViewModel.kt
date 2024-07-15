@@ -30,6 +30,7 @@ import com.example.gridtestapp.logic.events.AppResumed
 import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
+import com.example.gridtestapp.logic.events.GoBackFromImage
 import com.example.gridtestapp.logic.events.GotUrlIntent
 import com.example.gridtestapp.logic.events.ImagePressed
 import com.example.gridtestapp.logic.events.ImageScreenEvent
@@ -326,6 +327,10 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is GotUrlIntent -> navigateToAddImage(event.url)
             is AddImage -> addImageToTop(event.url)
             is ImagePressed -> imagePressed(event.url, event.index)
+            is GoBackFromImage -> {
+                _state.update { it.copy(hideImage = true) }
+                get<Routes>().goBack()
+            }
         }
     }
 

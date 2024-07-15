@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import com.example.gridtestapp.core.cache.MemoryManager
+import com.example.gridtestapp.logic.events.GoBackFromImage
 import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
 import com.example.gridtestapp.logic.events.ShowImageNotification
@@ -39,7 +40,6 @@ import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.logic.viewmodels.ImageViewModel
 import com.example.gridtestapp.ui.composables.FailBox
 import com.example.gridtestapp.ui.composables.ImageFailDialog
-import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.other.Hero
 import com.example.gridtestapp.ui.other.animationDuration
 import com.example.gridtestapp.ui.other.easing
@@ -100,8 +100,7 @@ fun ImageContent(
 
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                    ,
+                        .fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Box(
@@ -126,19 +125,24 @@ fun ImageContent(
 
                             if (painter != null) {
                                 val interactionSource = remember { MutableInteractionSource() }
-                                val routes = get<Routes>()
                                 val zoomState = rememberZoomState(
                                     minScale = 0.011f,
                                     maxScale = 10f,
                                     exitScale = 0.6f,
-                                    onExit = routes::goBack,
+                                    onExit = { zoomState ->
+                                        appViewModel.onEvent(GoBackFromImage)
+                                    }
                                 )
 
                                 val ratio = with(painter.intrinsicSize) { width / height }
                                 val modifier = if (ratio > 1) {
-                                    Modifier.aspectRatio(ratio).fillMaxWidth()
+                                    Modifier
+                                        .aspectRatio(ratio)
+                                        .fillMaxWidth()
                                 } else {
-                                    Modifier.aspectRatio(ratio).fillMaxHeight()
+                                    Modifier
+                                        .aspectRatio(ratio)
+                                        .fillMaxHeight()
                                 }
 
                                 Image(

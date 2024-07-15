@@ -53,7 +53,7 @@ class ZoomState(
     @FloatRange(from = 0.1) val exitScale: Float = 0.1f,
     private var contentSize: Size = Size.Zero,
     private val velocityDecay: DecayAnimationSpec<Float> = exponentialDecay(),
-    private val onExit: (() -> Unit)? = null,
+    private val onExit: ((ZoomState) -> Unit)? = null,
 ) {
     init {
         require(maxScale >= 1.0f) { "maxScale must be at least 1.0." }
@@ -389,7 +389,7 @@ class ZoomState(
 
     fun reachExitScale() = scale < exitScale
 
-    fun startExit() = onExit?.invoke()
+    fun startExit() = onExit?.invoke(this)
 }
 
 /**
@@ -407,7 +407,7 @@ fun rememberZoomState(
     @FloatRange(from = 0.1) exitScale: Float = 0.1f,
     contentSize: Size = Size.Zero,
     velocityDecay: DecayAnimationSpec<Float> = exponentialDecay(),
-    onExit: (() -> Unit)? = null
+    onExit: ((ZoomState) -> Unit)? = null
 ) = remember {
     ZoomState(minScale, maxScale, exitScale, contentSize, velocityDecay, onExit)
 }
