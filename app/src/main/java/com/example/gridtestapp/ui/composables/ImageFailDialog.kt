@@ -14,6 +14,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,10 +33,10 @@ import org.koin.androidx.compose.get
 @OptIn(ExperimentalMaterial3Api::class)
 fun ImageFailDialog(
     url: String,
-    appState: AppState,
-    appViewModel: AppViewModel = get(),
     onLoadAgain: () -> Unit,
 ) {
+    val appViewModel: AppViewModel = get()
+    val appState by appViewModel.state.collectAsState()
 
     val show = appState.showImageFailDialog.isSome { it == url }
 

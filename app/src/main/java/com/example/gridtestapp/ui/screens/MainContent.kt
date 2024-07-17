@@ -3,6 +3,7 @@
 package com.example.gridtestapp.ui.screens
 
 import android.os.Build
+import android.util.Log
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.core.ExperimentalAnimationSpecApi
 import androidx.compose.animation.core.keyframes
@@ -23,12 +24,11 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
@@ -39,7 +39,7 @@ import androidx.core.content.ContextCompat.getString
 import com.example.gridtestapp.R
 import com.example.gridtestapp.core.cache.MemoryManager
 import com.example.gridtestapp.logic.events.ChangeTheme
-import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
+import com.example.gridtestapp.logic.events.ChangeVisibleRange
 import com.example.gridtestapp.logic.events.ImagePressed
 import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
@@ -56,6 +56,8 @@ import com.example.gridtestapp.ui.other.easing
 import com.example.gridtestapp.ui.theme.DarkColorScheme
 import com.example.gridtestapp.ui.theme.LightColorScheme
 import com.robertlevonyan.compose.buttontogglegroup.RowToggleButtonGroup
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import org.koin.androidx.compose.get
 
 /*
@@ -66,55 +68,43 @@ import org.koin.androidx.compose.get
 @Composable
 fun MainContent(
     paddingValues: PaddingValues,
-    appViewModel: AppViewModel = get(),
     hero: Hero,
 ) {
-    val appState = appViewModel.state.collectAsState()
+    val appViewModel: AppViewModel = get()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
     ) {
-        val urls by remember {
-            derivedStateOf {
-                appState.value.urls
-            }
-        }
 
-        ToggleButtons(appViewModel = appViewModel)
+        val loading by appViewModel.loadingFlow.collectAsState(initial = remember {appViewModel.state.value.urls.isEmpty()})
+
+        ToggleButtons()
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            if (urls.isEmpty()) {
+            if (loading) {
                 Loader()
             } else {
-                ImageGrid(
-                    appViewModel = appViewModel,
-                    hero = hero,
-                )
+                ImageGrid(hero = hero)
             }
         }
     }
 }
 
 @Composable
-fun ToggleButtons(
-    appViewModel: AppViewModel = get()
-) {
-    val appState = appViewModel.state.collectAsState()
+fun ToggleButtons() {
+    val appViewModel: AppViewModel = get()
 
     val primarySelection = remember {
-        appState.value.theme
+        appViewModel.state.value.theme
     }
-    val theme by remember {
-        derivedStateOf {
-            appState.value.theme
-        }
-    }
+
+    val theme by appViewModel.themeFlow.collectAsState(initial = remember { appViewModel.state.value.theme })
 
     val context = LocalContext.current
     val buttonTexts = remember {
@@ -152,17 +142,9 @@ fun ToggleButtons(
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun ImageGrid(
-    appViewModel: AppViewModel = get(),
-    mainViewModel: MainViewModel = get(),
-    hero: Hero,
-) {
-
-    val appState = appViewModel.state.collectAsState().value
-
-    val indexesOnScreen = remember {
-        hashSetOf<Int>()
-    }
+fun ImageGrid(hero: Hero) {
+    val appViewModel: AppViewModel = get()
+    val mainViewModel: MainViewModel = get()
 
     val gridState = rememberLazyGridState()
 
@@ -175,28 +157,24 @@ fun ImageGrid(
     Box(
         modifier = Modifier
     ) {
+        val appState = appViewModel.state.collectAsState()
+//        Log.d("preview", "#. $appState")
+
         LazyVerticalGrid(
             state = gridState,
             modifier = Modifier.fillMaxSize(),
             columns = GridCells.Adaptive(100.dp),
         ) {
+
             itemsIndexed(
-                appState.urls.toList(),
+                appViewModel.state.value.urls.toList(),
                 key = { index, url -> "$index. $url" }
             ) { index, url ->
 
-                LaunchedEffect(index) {
-                    indexesOnScreen.add(index)
-                    appViewModel.onEvent(ChangeVisibleIndexes(indexesOnScreen, index))
-                }
-                DisposableEffect(index) {
-                    onDispose {
-                        indexesOnScreen.remove(index)
-                        appViewModel.onEvent(ChangeVisibleIndexes(indexesOnScreen, null))
-                    }
-                }
+                val previewState = appState.value.imageStates[url]?.previewState
+//                Log.d("preview", "$index. $previewState")
 
-                when (appState.imageStates[url]?.previewState) {
+                when (previewState) {
                     LoadState.LOADED -> {
                         val imageBitmap = MemoryManager.getPreviewBitmap(url)
                         if (imageBitmap != null) {
@@ -208,7 +186,13 @@ fun ImageGrid(
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
-                                        .zIndex(if (appState.currentImage?.index == index) { 1F } else { 0F })
+                                        .zIndex(
+                                            if (appViewModel.state.value.currentImage?.index == index) {
+                                                1F
+                                            } else {
+                                                0F
+                                            }
+                                        )
                                         .sharedBounds(
                                             sharedContentState,
                                             animatedVisibilityScope = hero.animatedScope,
@@ -216,18 +200,25 @@ fun ImageGrid(
                                             boundsTransform = { initialBounds, targetBounds ->
                                                 keyframes {
                                                     durationMillis = animationDuration
-                                                    initialBounds at 0 using easing(appState.currentScreen)
+                                                    initialBounds at 0 using easing
                                                     targetBounds at animationDuration
                                                 }
                                             },
 
-                                        )
+                                            )
                                         .aspectRatio(1.0f)
                                         .padding(2.dp)
                                         .clickable(
                                             interactionSource,
                                             indication = null,
-                                            onClick = { appViewModel.onEvent(ImagePressed(url, index)) },
+                                            onClick = {
+                                                appViewModel.onEvent(
+                                                    ImagePressed(
+                                                        url,
+                                                        index
+                                                    )
+                                                )
+                                            },
                                         )
                                 )
                             }
@@ -235,25 +226,33 @@ fun ImageGrid(
                             Box(modifier = Modifier.aspectRatio(1.0f)) {}
                         }
                     }
-
                     LoadState.IDLE,
                     LoadState.LOADING -> {
                         ImageLoader()
                     }
 
                     LoadState.FAIL -> {
-                        FailBox(url, appViewModel = appViewModel)
+                        FailBox(url)
                     }
                     else -> {}
                 }
 
                 ImageFailDialog(
                     url,
-                    appState,
-                    appViewModel = appViewModel,
                     onLoadAgain = { appViewModel.onEvent(LoadImageAgain(url)) }
                 )
             }
+        }
+
+        LaunchedEffect(gridState) {
+            snapshotFlow { gridState.layoutInfo.visibleItemsInfo }
+                .map { it.first().index..it.last().index }
+                .distinctUntilChanged { old, new ->
+                    old.first == new.first && old.last == new.last
+                }
+                .collect {
+                    appViewModel.onEvent(ChangeVisibleRange(it))
+                }
         }
     }
 }

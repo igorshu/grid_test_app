@@ -129,8 +129,6 @@ fun AddImageContent(
         }
         ImageFailDialog(
             url,
-            appState,
-            appViewModel = appViewModel,
             onLoadAgain = { addImageViewModel.onAppEvent(LoadImageAgain(url)) }
         )
     }

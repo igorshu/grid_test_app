@@ -1,20 +1,10 @@
 package com.example.gridtestapp.ui.other
 
 import androidx.compose.animation.core.*
-import com.example.gridtestapp.logic.states.Screen
 
 const val animationDuration = 400
+val easing = EaseInOutCubic
 
-fun easing(screen: Screen): Easing {
-    return when (screen) {
-        Screen.MAIN -> {
-            EaseInOutCubic
-        }
-        Screen.IMAGE -> {
-            EaseInOutCubic
-        }
-        else -> {
-            LinearEasing
-        }
-    }
+fun IntRange.size(): Int {
+    return last - first
 }

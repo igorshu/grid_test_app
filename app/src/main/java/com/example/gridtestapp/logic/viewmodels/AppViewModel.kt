@@ -30,7 +30,7 @@ import com.example.gridtestapp.logic.events.AddImageScreenEvent
 import com.example.gridtestapp.logic.events.AppPaused
 import com.example.gridtestapp.logic.events.AppResumed
 import com.example.gridtestapp.logic.events.ChangeTheme
-import com.example.gridtestapp.logic.events.ChangeVisibleIndexes
+import com.example.gridtestapp.logic.events.ChangeVisibleRange
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
 import com.example.gridtestapp.logic.events.GoBackFromImage
 import com.example.gridtestapp.logic.events.GotUrlIntent
@@ -52,16 +52,14 @@ import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.Screen
 import com.example.gridtestapp.logic.states.Theme
 import com.example.gridtestapp.ui.navigation.Routes
+import com.example.gridtestapp.ui.other.size
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.updateAndGet
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -69,6 +67,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.component.inject
 import org.koin.dsl.module
+import java.util.LinkedList
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -80,14 +79,15 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     private val localRepo: LocalRepo by inject()
     private val connectionManager: ConnectionManager by inject()
 
-    private var updateOuterPreviewsJob: Job? = null
-
     private val handler = CoroutineExceptionHandler { _, exception -> showError(application, viewModelScope, exception) }
 
     private val appName = application.getString(application.applicationInfo.labelRes)
 
     private val _state: MutableStateFlow<AppState> = MutableStateFlow(AppState.init(appName))
     val state: StateFlow<AppState> = _state.asStateFlow()
+
+    val themeFlow = state.map { it.theme }
+    val loadingFlow = state.map { it.urls.isEmpty() }
 
     private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad ->
         _state.value.imageStates[url] = ImageState(ImageError(errorMessage, canBeLoad), LoadState.FAIL)
@@ -132,7 +132,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
         val imageStates = urls.map { url -> url to ImageState( null, LoadState.IDLE) }.toMutableStateMap()
 
-        _state.update { it.copy(urls = urls, imageStates = imageStates) }
+        _state.update { it.copy(urls = LinkedList(urls), imageStates = imageStates) }
     }
 
     private suspend fun loadImage(url: String) {
@@ -163,48 +163,47 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     private fun loadPreviewFromMemory(url: String) {
-        viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
-            if (!MemoryManager.previewExists(url)) {
-                if (state.value.imageStates[url]?.previewState == LoadState.IDLE) {
+        if (!MemoryManager.previewExists(url)) {
+            if (state.value.imageStates[url]?.previewState == LoadState.IDLE) {
+                viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
                     loadImage(url)
                 }
             }
-        }
+        } // else не нужен так как если preview exists состояние уже LOADED
     }
 
     /*
     *
-    * Здесь чистим превью картинки из памяти за пределеми preload-а
+    * Здесь чистим превью картинки из памяти за пределеми preload-а, и подгружаем внутри
     *
      */
 
-    private fun updateOuterPreviews(indexesOnScreen: List<Int>) {
-        if (indexesOnScreen.isEmpty()) {
+    private fun handlePreviews(screenRange: IntRange) {
+        val urls = state.value.urls
+        if (screenRange.isEmpty() || urls.isEmpty()) {
             return
         }
 
-        val urls = state.value.urls
+        val preloadOffset = (screenRange.size() * Settings.PREVIEW_PRELOAD / 2).roundToInt()
+        val preloadRange = max(0, screenRange.first() - preloadOffset)..min(urls.size - 1, screenRange.last() + preloadOffset)
 
-        val screenRange = indexesOnScreen.first()..indexesOnScreen.last()
-        val preloadOffset = (indexesOnScreen.size * Settings.PREVIEW_PRELOAD / 2).roundToInt()
-        val preloadRange = max(0, indexesOnScreen.first() - preloadOffset)..min(urls.size - 1, indexesOnScreen.last() + preloadOffset)
+        Log.d("range", "preloadRange = $preloadRange")
 
-        var outerImageUrls = urls.filterIndexed { index, url ->
+        val outerImageUrls = urls.filterIndexed { index, url ->
             index !in preloadRange
         }
 
         val innerImageUrls = urls.slice(preloadRange)
-        outerImageUrls = outerImageUrls.filterNot { url ->
-            url in innerImageUrls
+        innerImageUrls.forEach { url ->
+            loadPreviewFromMemory(url)
         }
 
         outerImageUrls.forEach { url ->
-            MemoryManager.removePreviewBitmap(url)
-
             val imageState = _state.value.imageStates[url]
             if (imageState != null) {
                 val previewState = imageState.previewState
-                if (previewState != LoadState.FAIL && previewState != LoadState.LOADING && previewState != LoadState.IDLE) {
+                if (previewState != LoadState.FAIL && previewState != LoadState.LOADING) {
+                    MemoryManager.removePreviewBitmap(url)
                     _state.value.imageStates[url] = ImageState(null, LoadState.IDLE)
                 }
             }
@@ -292,18 +291,9 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is LoadImageAgain -> {
                 loadImageAgain(event)
             }
-            is ChangeVisibleIndexes -> {
-                updateOuterPreviewsJob?.cancel()
-                updateOuterPreviewsJob = viewModelScope.launch(Dispatchers.Default) {
-                    delay(10)
-                    if (isActive) {
-                        updateOuterPreviews(event.indexesOnScreen.sorted())
-                    }
-                }
-
-                if (event.index != null) {
-                    val url = state.value.urls[event.index]
-                    loadPreviewFromMemory(url)
+            is ChangeVisibleRange -> {
+                viewModelScope.launch(handler + Dispatchers.Default) {
+                    handlePreviews(event.visibleRange)
                 }
             }
             is AppResumed -> notificationsManager.showResumeNotification()

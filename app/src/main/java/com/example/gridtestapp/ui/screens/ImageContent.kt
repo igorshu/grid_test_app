@@ -164,7 +164,7 @@ fun ImageContent(
                                             boundsTransform = { initialBounds, targetBounds ->
                                                 keyframes {
                                                     durationMillis = animationDuration
-                                                    initialBounds at 0 using easing(appState.currentScreen)
+                                                    initialBounds at 0 using easing
                                                     targetBounds at animationDuration
                                                 }
                                             },
@@ -195,8 +195,6 @@ fun ImageContent(
                 }
                 ImageFailDialog(
                     url,
-                    appState,
-                    appViewModel = appViewModel,
                     onLoadAgain = { appViewModel.onEvent(LoadImageAgain(url)) }
                 )
             }

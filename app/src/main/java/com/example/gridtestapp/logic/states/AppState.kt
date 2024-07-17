@@ -1,11 +1,10 @@
 package com.example.gridtestapp.logic.states
 
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import arrow.core.None
 import arrow.core.Option
+import java.util.LinkedList
 
 enum class Screen {
     MAIN, IMAGE, ADD_IMAGE
@@ -22,7 +21,7 @@ enum class Theme {
 data class AppState internal constructor (
 
     val theme: Theme,
-    val urls: SnapshotStateList<String>, // for url order
+    val urls: LinkedList<String>, // for url order
     val imageStates: SnapshotStateMap<String, ImageState>,
     val showImageFailDialog: Option<String>,
     val screenRange: IntRange,
@@ -39,7 +38,7 @@ data class AppState internal constructor (
     companion object {
         fun init(title: String): AppState = AppState(
             theme = Theme.BY_DEFAULT,
-            urls = mutableStateListOf(),
+            urls = LinkedList(),
             imageStates = mutableStateMapOf(),
             showImageFailDialog = None,
             screenRange = IntRange(0, 0),
@@ -56,7 +55,7 @@ data class AppState internal constructor (
     }
 
     fun clear() = copy(
-        urls = mutableStateListOf(),
+        urls = LinkedList(),
         imageStates = mutableStateMapOf(),
         showImageFailDialog = None,
         screenRange = IntRange(0, 0),

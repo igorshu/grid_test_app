@@ -18,8 +18,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -111,13 +111,8 @@ class MainActivity : ComponentActivity(), KoinComponent {
                     routes.addListener(appViewModel, navController)
                     parseIntent(intent)
                 }
-                val appState = appViewModel.state.collectAsState()
 
-                val theme by remember {
-                    derivedStateOf {
-                        appState.value.theme
-                    }
-                }
+                val theme by appViewModel.themeFlow.collectAsState(initial = remember { appViewModel.state.value.theme })
 
                 get<Routes>().setController(navController)
 
@@ -135,9 +130,13 @@ class MainActivity : ComponentActivity(), KoinComponent {
                             }
                         }
 
+                        val showSystemBars by remember {
+                            mutableStateOf(appViewModel.state.value.showSystemBars)
+                        }
+
                         val systemUiController: SystemUiController = rememberSystemUiController()
-                        LaunchedEffect(key1 = appState.value.showSystemBars) {
-                            setSystemBars(appState.value.showSystemBars, systemUiController)
+                        LaunchedEffect(key1 = showSystemBars) {
+                            setSystemBars(showSystemBars, systemUiController)
                         }
 
                         NavHost(
@@ -154,7 +153,6 @@ class MainActivity : ComponentActivity(), KoinComponent {
                             composable(Routes.MAIN) {
                                 MainContent(
                                     paddingValues,
-                                    appViewModel,
                                     Hero(this@composable, this@SharedTransitionLayout),
                                 )
                             }
@@ -167,7 +165,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
                                         ImageContent(
                                             index,
                                             url,
-                                            appState.value.urls,
+                                            appViewModel.state.value.urls,
                                             hero = Hero(
                                                 this@composable,
                                                 this@SharedTransitionLayout
