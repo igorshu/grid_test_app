@@ -88,6 +88,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
     val themeFlow = state.map { it.theme }
     val loadingFlow = state.map { it.urls.isEmpty() }
+    val systemBarsFlow = state.map { it.showSystemBars }
 
     private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad ->
         _state.value.imageStates[url] = ImageState(ImageError(errorMessage, canBeLoad), LoadState.FAIL)

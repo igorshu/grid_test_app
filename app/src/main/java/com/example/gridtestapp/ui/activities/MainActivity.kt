@@ -19,7 +19,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -130,9 +129,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
                             }
                         }
 
-                        val showSystemBars by remember {
-                            mutableStateOf(appViewModel.state.value.showSystemBars)
-                        }
+                        val showSystemBars by appViewModel.systemBarsFlow.collectAsState(initial = true)
 
                         val systemUiController: SystemUiController = rememberSystemUiController()
                         LaunchedEffect(key1 = showSystemBars) {
