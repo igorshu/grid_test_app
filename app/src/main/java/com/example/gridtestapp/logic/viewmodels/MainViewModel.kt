@@ -1,15 +1,20 @@
 package com.example.gridtestapp.logic.viewmodels
 
 import android.app.Application
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.gridtestapp.logic.events.MainEvent
 import com.example.gridtestapp.logic.events.OnMainEvent
 import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
 import com.example.gridtestapp.logic.states.MainScreenState
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import org.koin.androidx.viewmodel.dsl.viewModel
+import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.dsl.module
@@ -24,21 +29,40 @@ class MainViewModel(private val application: Application): AndroidViewModel(appl
     private val _state: MutableStateFlow<MainScreenState> = MutableStateFlow(MainScreenState.init())
     val state: StateFlow<MainScreenState> = _state.asStateFlow()
 
-    val onEvent: OnMainEvent = { event ->
-        when (event) {
-            is UpdateImageWidthEvent -> changeWidth(event.width)
+    private val _event: MutableSharedFlow<MainEvent> = MutableSharedFlow()
+
+    init {
+        subscribeToEvents()
+    }
+
+    private fun subscribeToEvents() {
+        viewModelScope.launch {
+            _event.collect {
+                onEvent(it)
+            }
         }
     }
 
-    private fun changeWidth(width: Int) {
+    fun setEvent(event: MainEvent) {
+        viewModelScope.launch { _event.emit(event) }
+    }
+
+    private val onEvent: OnMainEvent = { event ->
+        when (event) {
+            is UpdateImageWidthEvent -> changeWidth(event.width, event.dpWidth)
+        }
+    }
+
+    private fun changeWidth(width: Int, dpWidth: Dp) {
         _state.update { it.copy(widthConsumed = true) }
-        get<ImageWidth>().value = width
+        get<ImageWidth>().pxWidth = width
+        get<ImageWidth>().dpWidth = dpWidth
     }
 
     companion object {
         val module = module {
-            viewModel { MainViewModel(get()) }
-            single { ImageWidth(1) }
+            single { MainViewModel(get()) }
+            single { ImageWidth(0, 0.dp) }
         }
     }
 }

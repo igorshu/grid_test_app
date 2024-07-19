@@ -27,6 +27,7 @@ import com.example.gridtestapp.R
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
 import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
+import com.example.gridtestapp.ui.other.index
 import org.koin.androidx.compose.get
 
 @Composable
@@ -41,9 +42,10 @@ fun ImageFailDialog(
     val show = appState.showImageFailDialog.isSome { it == url }
 
     if (show) {
-        val imageError = appState.imageStates[url]?.imageError
+        val index = appState.imageStates.index(url)
+        val imageError = appState.imageStates[index].imageError
         imageError?.let {
-            AlertDialog(onDismissRequest = { appViewModel.onEvent(DismissImageFailDialog) }) {
+            AlertDialog(onDismissRequest = { appViewModel.setEvent(DismissImageFailDialog) }) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -67,7 +69,7 @@ fun ImageFailDialog(
                             Button(
                                 modifier = Modifier.padding(top = 15.dp),
                                 onClick = {
-                                    appViewModel.onEvent(DismissImageFailDialog)
+                                    appViewModel.setEvent(DismissImageFailDialog)
                                     onLoadAgain.invoke()
                                 },
                             ) {
@@ -76,7 +78,7 @@ fun ImageFailDialog(
                         }
                         Button(
                             modifier = Modifier.padding(top = 15.dp),
-                            onClick = { appViewModel.onEvent(DismissImageFailDialog) }
+                            onClick = { appViewModel.setEvent(DismissImageFailDialog) }
                         ) {
                             Text(stringResource(id = R.string.ok))
                         }

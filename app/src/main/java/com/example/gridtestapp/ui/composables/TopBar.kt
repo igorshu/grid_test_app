@@ -34,17 +34,16 @@ import org.koin.androidx.compose.get
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar(
-    appViewModel: AppViewModel = get()
-) {
-    val appState = appViewModel.state.collectAsState()
+fun TopBar() {
+    val appViewModel: AppViewModel = get()
+    val appState by appViewModel.state.collectAsState()
 
     val windowInsets = TopAppBarDefaults.windowInsets
     val density = LocalDensity.current
 
     val showTopBar by remember {
         derivedStateOf {
-            appState.value.showTopBar
+            appState.showTopBar
         }
     }
 
@@ -68,11 +67,11 @@ fun TopBar(
                     titleContentColor = Color.White,
                     containerColor = MaterialTheme.colorScheme.tertiary,
                 ),
-                title = { Text(appState.value.title, maxLines = 1) },
+                title = { Text(appState.title, maxLines = 1) },
                 navigationIcon = {
                     val showBack by remember {
                         derivedStateOf {
-                            appState.value.showBack
+                            appState.showBack
                         }
                     }
                     if (showBack) {
@@ -88,12 +87,12 @@ fun TopBar(
                 actions = {
                     val currentScreen by remember {
                         derivedStateOf {
-                            appState.value.currentScreen
+                            appState.currentScreen
                         }
                     }
                     when (currentScreen) {
                         Screen.MAIN -> {
-                            IconButton(onClick = { appViewModel.onEvent(Reload) }) {
+                            IconButton(onClick = { appViewModel.setEvent(Reload) }) {
                                 Icon(
                                     imageVector = Icons.Filled.Refresh,
                                     contentDescription = "Share",
@@ -104,8 +103,8 @@ fun TopBar(
 
                         Screen.IMAGE -> {
                             IconButton(onClick = {
-                                appState.value.currentImage?.let { imagePair ->
-                                    appViewModel.onEvent(
+                                appState.currentImage?.let { imagePair ->
+                                    appViewModel.setEvent(
                                         RemoveImage(
                                             imagePair.url,
                                             imagePair.index
@@ -120,8 +119,8 @@ fun TopBar(
                                 )
                             }
                             IconButton(onClick = {
-                                appState.value.currentImage?.let { imagePair ->
-                                    appViewModel.onEvent(SharePressed(imagePair.url))
+                                appState.currentImage?.let { imagePair ->
+                                    appViewModel.setEvent(SharePressed(imagePair.url))
                                 }
                             }) {
                                 Icon(

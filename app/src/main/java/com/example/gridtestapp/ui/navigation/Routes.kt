@@ -43,7 +43,7 @@ class Routes() {
         navController.addOnDestinationChangedListener { controller, destination, arguments ->
             when (destination.route) {
                 MAIN -> {
-                    appViewModel.onEvent(MainScreenEvent)
+                    appViewModel.setEvent(MainScreenEvent)
                 }
                 IMAGE -> {
                     arguments?.apply {
@@ -51,7 +51,7 @@ class Routes() {
                         val index = getString("index")?.toInt()
                         url?.let {
                             index?.let {
-                                appViewModel.onEvent(ImageScreenEvent(url = url, index = index))
+                                appViewModel.setEvent(ImageScreenEvent(url = url, index = index))
                             }
                         }
                     }
@@ -59,7 +59,7 @@ class Routes() {
                 ADD_IMAGE -> {
                     val url = arguments?.getString("url")
                     url?.let {
-                        appViewModel.onEvent(AddImageScreenEvent(url = url))
+                        appViewModel.setEvent(AddImageScreenEvent(url = url))
                     }
                 }
             }

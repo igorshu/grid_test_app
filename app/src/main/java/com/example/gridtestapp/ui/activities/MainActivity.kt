@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalSharedTransitionApi::class)
+@file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalSharedTransitionApi::class)
 
 package com.example.gridtestapp.ui.activities
 
@@ -35,7 +35,7 @@ import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.ui.activities.SplashActivity.Companion.ADD_URL
 import com.example.gridtestapp.ui.composables.TopBar
 import com.example.gridtestapp.ui.navigation.Routes
-import com.example.gridtestapp.ui.other.Hero
+import com.example.gridtestapp.ui.other.urls
 import com.example.gridtestapp.ui.screens.AddImageContent
 import com.example.gridtestapp.ui.screens.ImageContent
 import com.example.gridtestapp.ui.screens.MainContent
@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
 
     private fun parseIntent(intent: Intent) {
         intent.getStringExtra(ADD_URL)?.let { url ->
-            get<AppViewModel>().onEvent(GotUrlIntent(url))
+            get<AppViewModel>().setEvent(GotUrlIntent(url))
         }
     }
 
@@ -123,9 +123,9 @@ class MainActivity : ComponentActivity(), KoinComponent {
                     ) { paddingValues ->
 
                         LifecycleResumeEffect(Unit) {
-                            appViewModel.onEvent(AppResumed)
+                            appViewModel.setEvent(AppResumed)
                             onPauseOrDispose {
-                                appViewModel.onEvent(AppPaused)
+                                appViewModel.setEvent(AppPaused)
                             }
                         }
 
@@ -150,7 +150,8 @@ class MainActivity : ComponentActivity(), KoinComponent {
                             composable(Routes.MAIN) {
                                 MainContent(
                                     paddingValues,
-                                    Hero(this@composable, this@SharedTransitionLayout),
+                                    this@composable,
+                                    this@SharedTransitionLayout,
                                 )
                             }
                             composable(Routes.IMAGE) { backStackEntry ->
@@ -162,11 +163,9 @@ class MainActivity : ComponentActivity(), KoinComponent {
                                         ImageContent(
                                             index,
                                             url,
-                                            appViewModel.state.value.urls,
-                                            hero = Hero(
-                                                this@composable,
-                                                this@SharedTransitionLayout
-                                            ),
+                                            appViewModel.state.value.imageStates.urls(),
+                                            this@composable,
+                                            this@SharedTransitionLayout,
                                             paddingValues = paddingValues,
                                         )
                                     } else {

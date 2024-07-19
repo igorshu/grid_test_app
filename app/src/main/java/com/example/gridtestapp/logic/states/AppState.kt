@@ -2,6 +2,7 @@ package com.example.gridtestapp.logic.states
 
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.ui.graphics.ImageBitmap
 import arrow.core.None
 import arrow.core.Option
 import java.util.LinkedList
@@ -21,8 +22,8 @@ enum class Theme {
 data class AppState internal constructor (
 
     val theme: Theme,
-    val urls: LinkedList<String>, // for url order
-    val imageStates: SnapshotStateMap<String, ImageState>,
+    val loading: Boolean,
+    val imageStates: List<ImageState>,
     val showImageFailDialog: Option<String>,
     val screenRange: IntRange,
     val preloadRange: IntRange,
@@ -33,13 +34,14 @@ data class AppState internal constructor (
     val title: String,
     val currentScreen: Screen,
     val currentImage: ImagePair?,
+    val selectedImage: ImageSelected?,
     val hideImage: Boolean
 ) {
     companion object {
         fun init(title: String): AppState = AppState(
             theme = Theme.BY_DEFAULT,
-            urls = LinkedList(),
-            imageStates = mutableStateMapOf(),
+            loading = true,
+            imageStates = listOf(),
             showImageFailDialog = None,
             screenRange = IntRange(0, 0),
             preloadRange = IntRange(0, 0),
@@ -50,13 +52,14 @@ data class AppState internal constructor (
             title = title,
             currentScreen = Screen.MAIN,
             currentImage = null,
+            selectedImage = null,
             hideImage = false,
         )
     }
 
     fun clear() = copy(
-        urls = LinkedList(),
-        imageStates = mutableStateMapOf(),
+        loading = true,
+        imageStates = listOf(),
         showImageFailDialog = None,
         screenRange = IntRange(0, 0),
         preloadRange = IntRange(0, 0),
@@ -65,5 +68,11 @@ data class AppState internal constructor (
     class ImagePair(
         val url: String,
         val index: Int,
+    )
+
+    class ImageSelected(
+        val url: String,
+        val index: Int,
+        val consumed: Boolean = false
     )
 }

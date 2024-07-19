@@ -1,6 +1,10 @@
 package com.example.gridtestapp.logic.states
 
-class ImageError(
+data class ImageError(
     val errorMessage: String,
     val canBeLoad: Boolean,
-)
+) {
+    override fun toString(): String {
+        return "ImageError(errorMessage='$errorMessage', canBeLoad=$canBeLoad)"
+    }
+}

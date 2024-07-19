@@ -2,7 +2,9 @@
 
 package com.example.gridtestapp.ui.screens
 
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.ExperimentalAnimationSpecApi
 import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -38,9 +40,9 @@ import com.example.gridtestapp.logic.states.LoadState.FAIL
 import com.example.gridtestapp.logic.states.LoadState.LOADED
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.logic.viewmodels.ImageViewModel
+import com.example.gridtestapp.logic.viewmodels.ImageWidth
 import com.example.gridtestapp.ui.composables.FailBox
 import com.example.gridtestapp.ui.composables.ImageFailDialog
-import com.example.gridtestapp.ui.other.Hero
 import com.example.gridtestapp.ui.other.animationDuration
 import com.example.gridtestapp.ui.other.easing
 import net.engawapg.lib.zoomable.rememberZoomState
@@ -62,16 +64,18 @@ fun ImageContent(
     index: Int,
     url: String,
     urls: List<String>,
-    appViewModel: AppViewModel = get(),
-    imageViewModel: ImageViewModel = koinViewModel(parameters = { parametersOf(urls, index, url) }),
-    hero: Hero,
+    animatedScope: AnimatedContentScope,
+    sharedTransitionScope: SharedTransitionScope,
     paddingValues: PaddingValues,
 ) {
+
+    val appViewModel: AppViewModel = get()
+    val imageViewModel: ImageViewModel = koinViewModel(parameters = { parametersOf(urls, index, url) })
 
     val imageState = imageViewModel.state.collectAsState().value
     val appState = appViewModel.state.collectAsState().value
 
-    with(hero.sharedTransitionScope) {
+    with(sharedTransitionScope) {
 
         if (!appState.hideImage) {
             val pagerState = rememberPagerState(
@@ -84,7 +88,7 @@ fun ImageContent(
                 val currentUrl = urls[currentPage]
 
                 imageViewModel.onEvent(ShowImageNotification(currentUrl))
-                appViewModel.onEvent(UpdateCurrentImage(currentUrl, currentPage))
+                appViewModel.setEvent(UpdateCurrentImage(currentUrl, currentPage))
             }
 
             val imagePadding = remember {
@@ -94,10 +98,10 @@ fun ImageContent(
             HorizontalPager(state = pagerState) { index ->
                 val url = urls[index]
 
-                val sharedContentState = rememberSharedContentState(key = "$index $url")
+                val sharedContentState = rememberSharedContentState(key = index)
 
                 val urlState = imageState.originalUrlStates[url]
-                val itemImageState = appState.imageStates[url]
+                val itemImageState = appState.imageStates[index]
 
                 Box(
                     modifier = Modifier
@@ -110,10 +114,10 @@ fun ImageContent(
                             .padding(imagePadding),
                         contentAlignment = Alignment.Center
                     ) {
-                        val previewUrlState = itemImageState?.previewState
+                        val previewUrlState = itemImageState.previewState
                         if (urlState == LOADED || previewUrlState == LOADED) {
                             val originalImage = MemoryManager.getOriginalBitmap(url)
-                            val previewImage = MemoryManager.getPreviewBitmap(url)
+                            val previewImage = itemImageState.previewBitmap
 
                             val painter = if (originalImage != null) {
                                 BitmapPainter(originalImage)
@@ -131,7 +135,7 @@ fun ImageContent(
                                     maxScale = 10f,
                                     exitScale = 0.6f,
                                     onExit = { zoomState ->
-                                        appViewModel.onEvent(GoBackFromImage)
+                                        appViewModel.setEvent(GoBackFromImage)
                                     }
                                 )
 
@@ -155,11 +159,11 @@ fun ImageContent(
                                             interactionSource,
                                             indication = null,
                                         ) {
-                                            appViewModel.onEvent(ToggleFullScreen)
+                                            appViewModel.setEvent(ToggleFullScreen)
                                         }
                                         .sharedBounds(
                                             sharedContentState,
-                                            animatedVisibilityScope = hero.animatedScope,
+                                            animatedVisibilityScope = animatedScope,
                                             renderInOverlayDuringTransition = false,
                                             boundsTransform = { initialBounds, targetBounds ->
                                                 keyframes {
@@ -176,7 +180,7 @@ fun ImageContent(
                             }
                         } else {
                             if (previewUrlState == FAIL || urlState == FAIL) {
-                                FailBox(url, appViewModel = appViewModel)
+                                FailBox(url, get<ImageWidth>().dpWidth)
                             } else {
                                 Box(
                                     modifier = Modifier.aspectRatio(1.0f),
@@ -195,7 +199,7 @@ fun ImageContent(
                 }
                 ImageFailDialog(
                     url,
-                    onLoadAgain = { appViewModel.onEvent(LoadImageAgain(url)) }
+                    onLoadAgain = { appViewModel.setEvent(LoadImageAgain(url, index)) }
                 )
             }
         } else {

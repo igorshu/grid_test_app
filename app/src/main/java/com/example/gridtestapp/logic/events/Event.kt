@@ -1,5 +1,7 @@
 package com.example.gridtestapp.logic.events
 
+import androidx.compose.ui.unit.Dp
+
 /**
  *  Классы событий
  */
@@ -15,7 +17,7 @@ data class SharePressed(val url: String) : AppEvent()
 data class RemoveImage(val url: String, val index: Int) : AppEvent()
 data class ShowImageFailDialog(val url: String) : AppEvent()
 data object DismissImageFailDialog : AppEvent()
-data class LoadImageAgain(val url: String) : AppEvent()
+data class LoadImageAgain(val url: String, val index: Int) : AppEvent()
 data class ChangeVisibleRange(val visibleRange: IntRange) : AppEvent()
 data object AppResumed : AppEvent()
 data object AppPaused : AppEvent()
@@ -25,13 +27,14 @@ data class GotUrlIntent(val url: String) : AppEvent()
 data class UpdateCurrentImage(val url: String, val index: Int) : AppEvent()
 data class AddImage(val url: String) : AppEvent()
 data class ImagePressed(val url: String, val index: Int) : AppEvent()
+data class ImagePressedNavigate(val url: String, val index: Int) : AppEvent()
 data object GoBackFromImage : AppEvent()
 
 
 // События основного экрана
 
 sealed class MainEvent
-data class UpdateImageWidthEvent(val width: Int) : MainEvent()
+data class UpdateImageWidthEvent(val width: Int, val dpWidth: Dp) : MainEvent()
 
 // События экрана с картинкой
 

@@ -36,6 +36,7 @@ import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.states.LoadState.FAIL
 import com.example.gridtestapp.logic.viewmodels.AddImageViewModel
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
+import com.example.gridtestapp.logic.viewmodels.ImageWidth
 import com.example.gridtestapp.ui.composables.FailBox
 import com.example.gridtestapp.ui.composables.ImageFailDialog
 import net.engawapg.lib.zoomable.rememberZoomState
@@ -52,7 +53,6 @@ fun AddImageContent(
 ) {
 
     val state = addImageViewModel.state.collectAsState().value
-    val appState = appViewModel.state.collectAsState().value
 
     if (state.loadState == LoadState.LOADED) {
         val originalImage = remember {
@@ -79,7 +79,7 @@ fun AddImageContent(
                             interactionSource,
                             indication = null,
                         ) {
-                            appViewModel.onEvent(ToggleFullScreen)
+                            appViewModel.setEvent(ToggleFullScreen)
                         }
                         .zoomable(zoomState)
                 )
@@ -91,7 +91,7 @@ fun AddImageContent(
                 ) {
                     Spacer(modifier = Modifier.weight(0.5f))
                     FilledTonalButton(onClick = {
-                        appViewModel.onEvent(AddImage(url))
+                        appViewModel.setEvent(AddImage(url))
                     }) {
                         Text(stringResource(id = R.string.add))
                     }
@@ -114,7 +114,7 @@ fun AddImageContent(
         ) {
             val urlState = state.loadState
             if (urlState == FAIL) {
-                FailBox(url, appViewModel = appViewModel)
+                FailBox(url, get<ImageWidth>().dpWidth)
             } else {
                 Box(
                     modifier = Modifier.aspectRatio(1.0f),
@@ -129,7 +129,7 @@ fun AddImageContent(
         }
         ImageFailDialog(
             url,
-            onLoadAgain = { addImageViewModel.onAppEvent(LoadImageAgain(url)) }
+            onLoadAgain = { addImageViewModel.onAppEvent(LoadImageAgain(url, 0)) }
         )
     }
 }

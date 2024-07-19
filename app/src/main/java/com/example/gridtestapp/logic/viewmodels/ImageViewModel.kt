@@ -72,7 +72,9 @@ class ImageViewModel(
             is ShowImageNotification -> {
                 viewModelScope.launch(handler + Dispatchers.Default) {
                     val imageBitmap = MemoryManager.getOriginalBitmap(event.url)
-                    notificationsManager.showImageNotification(imageBitmap?.asAndroidBitmap(), event.url)
+                        ?.asAndroidBitmap()
+                        ?.apply { prepareToDraw() }
+                    notificationsManager.showImageNotification(imageBitmap, event.url)
                 }
             }
         }
@@ -114,6 +116,7 @@ class ImageViewModel(
                 if (CacheManager.loadImage(url)) {
                     val bitmap = CacheManager.originalImageBitmap(url)
                     if (bitmap != null) {
+                        bitmap.prepareToDraw()
                         MemoryManager.addOriginalBitmap(url, bitmap)
                         _state.update {
                             val originalUrlStates = it.originalUrlStates.toMutableMap().apply { put(url, LoadState.LOADED) }

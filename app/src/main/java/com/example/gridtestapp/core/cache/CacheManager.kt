@@ -3,6 +3,7 @@ package com.example.gridtestapp.core.cache
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.net.Uri
 import android.webkit.URLUtil
 import androidx.compose.ui.graphics.ImageBitmap
@@ -27,6 +28,7 @@ import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.math.min
 
 /*
 *
@@ -147,16 +149,27 @@ object CacheManager: KoinComponent {
     private fun savePreviewImage(url: String, bitmap: Bitmap) {
         val out = FileOutputStream(urlToPreviewPath(url))
 
-        val width = get<ImageWidth>().value
-        val height = bitmap.height * width / bitmap.width
+        val squaredBitmap = createSquaredBitmap(bitmap)
+
+        val side = min((get<ImageWidth>().pxWidth * 0.95).toInt(), squaredBitmap.width)
 
         val previewBitmap = Bitmap.createScaledBitmap(
-            bitmap,
-            width,
-            height,
+            squaredBitmap,
+            side,
+            side,
             false)
-        previewBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        previewBitmap.compress(Bitmap.CompressFormat.PNG, 10, out)
         out.close()
+    }
+
+    private fun createSquaredBitmap(srcBmp: Bitmap): Bitmap {
+        val side = min(srcBmp.width.toDouble(), srcBmp.height.toDouble()).toInt()
+        val dstBmp = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+
+        val canvas = Canvas(dstBmp)
+        canvas.drawBitmap(srcBmp, (side - srcBmp.width).toFloat() / 2, (side - srcBmp.height).toFloat() / 2, null)
+
+        return dstBmp
     }
 
     // Большая картинка
