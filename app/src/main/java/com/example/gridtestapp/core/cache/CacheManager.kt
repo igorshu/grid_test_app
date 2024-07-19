@@ -153,12 +153,8 @@ object CacheManager: KoinComponent {
 
         val side = min((get<ImageWidth>().pxWidth * 0.95).toInt(), squaredBitmap.width)
 
-        val previewBitmap = Bitmap.createScaledBitmap(
-            squaredBitmap,
-            side,
-            side,
-            false)
-        previewBitmap.compress(Bitmap.CompressFormat.PNG, 10, out)
+        val previewBitmap = Bitmap.createScaledBitmap(squaredBitmap, side, side, false)
+        previewBitmap.compress(Bitmap.CompressFormat.JPEG, 70, out)
         out.close()
     }
 

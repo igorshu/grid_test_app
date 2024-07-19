@@ -218,24 +218,23 @@ fun ImageGrid(
 
                                 val sharedContentState = rememberSharedContentState(key = index)
 
+                                val painter = remember(index) {
+                                    BitmapPainter(imageBitmap)
+                                }
+
                                 Image(
-                                    painter = BitmapPainter(imageBitmap),
+                                    painter = painter,
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .zIndex(
-                                            if (appState.currentImage?.index == index) {
-                                                1F
-                                            } else {
-                                                0F
-                                            }
+                                            if (appState.currentImage?.index == index) { 1F } else { 0F }
                                         )
                                         .then(
                                             if (selectedImage?.index == index) {
                                                 if (!selectedImage.consumed) {
                                                     appViewModel.setEvent(ImagePressedNavigate(url, index))
                                                 }
-
                                                 Modifier.sharedBounds(
                                                     sharedContentState,
                                                     animatedVisibilityScope = animatedScope,
