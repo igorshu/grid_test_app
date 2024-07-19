@@ -1,11 +1,8 @@
 package com.example.gridtestapp.logic.states
 
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.snapshots.SnapshotStateMap
-import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.runtime.Immutable
 import arrow.core.None
 import arrow.core.Option
-import java.util.LinkedList
 
 enum class Screen {
     MAIN, IMAGE, ADD_IMAGE
@@ -65,12 +62,14 @@ data class AppState internal constructor (
         preloadRange = IntRange(0, 0),
     )
 
-    class ImagePair(
+    @Immutable
+    data class ImagePair(
         val url: String,
         val index: Int,
     )
 
-    class ImageSelected(
+    @Immutable
+    data class ImageSelected(
         val url: String,
         val index: Int,
         val consumed: Boolean = false
