@@ -166,7 +166,7 @@ fun ImageGrid(
     val appViewModel: AppViewModel = get()
     val mainViewModel: MainViewModel = get()
 
-    Log.d("cons", "widthConsumed = ${widthConsumed}")
+    Log.d("cons", "widthConsumed = $widthConsumed")
 
     Box(
         modifier = Modifier
@@ -191,6 +191,10 @@ fun ImageGrid(
         val selectedImage = appViewModel.state.mapState(coroutineScope) { it.selectedImage }.collectAsState()
         val currentImage = appViewModel.state.mapState(coroutineScope) { it.currentImage }.collectAsState()
 
+        val theme by appViewModel.themeFlow.collectAsState(initial = remember { appViewModel.state.value.theme })
+        val isDark = theme.isDark(isSystemInDarkTheme())
+        val backgroundColor = (if (isDark) DarkColorScheme else LightColorScheme).background
+
         LazyVerticalGrid(
             state = gridState,
             modifier = Modifier.fillMaxSize(),
@@ -202,88 +206,72 @@ fun ImageGrid(
             itemsIndexed(
                 imageStates,
                 key = { index, imageState -> "$index. ${imageState.value.url}" },
-                contentType = { _, item ->
-                    when (item.value.previewState) {
-                        LoadState.IDLE,
-                        LoadState.LOADED -> "IMAGE"
-                        LoadState.FAIL -> "FAIL"
-                        LoadState.LOADING -> "LOADER"
-                    }
-                }
             ) { index, imageStateItem ->
 
                 val imageState by imageStateItem.collectAsState()
 
-
                 val url = imageState.url
                 val previewState = imageState.previewState
 
-//                Log.d("preview", "$index. $previewState")
+                val imageBitmap = imageState.previewBitmap
+                val painter = if (imageBitmap == null) ColorPainter(backgroundColor) else BitmapPainter(imageBitmap)
 
-                when (previewState) {
-                    LoadState.IDLE,
-                    LoadState.LOADED -> {
-                        val imageBitmap = imageState.previewBitmap
-                        val painter = if (imageBitmap == null) ColorPainter(Color.White) else BitmapPainter(imageBitmap)
+                with(sharedTransitionScope) {
 
-                        with(sharedTransitionScope) {
+                    val sharedContentState = rememberSharedContentState(key = index)
 
-                            val sharedContentState = rememberSharedContentState(key = index)
-
-                            Image(
-                                painter = painter,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .zIndex(
-                                        if (currentImage.value?.index == index) { 1F } else { 0F }
-                                    )
-                                    .then(
-                                        if (selectedImage.value?.index == index) {
-                                            if (selectedImage.value?.consumed == false) {
-                                                appViewModel.setEvent( ImagePressedNavigate(url, index))
-                                            }
-                                            Modifier.sharedBounds(
-                                                sharedContentState,
-                                                animatedVisibilityScope = animatedScope,
-                                                renderInOverlayDuringTransition = false,
-                                                boundsTransform = { initialBounds, targetBounds ->
-                                                    keyframes {
-                                                        durationMillis = animationDuration
-                                                        initialBounds at 0 using easing
-                                                        targetBounds at animationDuration
-                                                    }
-                                                },
-                                            )
-                                        } else {
-                                            Modifier
-                                        }
-                                    )
-                                    .then(
-                                        if (dpWidth == 0.dp) {
-                                            Modifier
-                                                .fillMaxSize()
-                                                .aspectRatio(1f)
-                                        } else {
-                                            Modifier
-                                                .width(dpWidth)
-                                                .height(dpWidth)
-                                        }
-                                    )
-                                    .clickable(
-                                        remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = { appViewModel.setEvent(ImagePressed(url, index)) },
-                                    )
+                    Image(
+                        painter = painter,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .zIndex(
+                                if (currentImage.value?.index == index) { 1F } else { 0F }
                             )
-                        }
-                    }
+                            .then(
+                                if (selectedImage.value?.index == index) {
+                                    if (selectedImage.value?.consumed == false) {
+                                        appViewModel.setEvent(ImagePressedNavigate(url, index))
+                                    }
+                                    Modifier.sharedBounds(
+                                        sharedContentState,
+                                        animatedVisibilityScope = animatedScope,
+                                        renderInOverlayDuringTransition = false,
+                                        boundsTransform = { initialBounds, targetBounds ->
+                                            keyframes {
+                                                durationMillis = animationDuration
+                                                initialBounds at 0 using easing
+                                                targetBounds at animationDuration
+                                            }
+                                        },
+                                    )
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .then(
+                                if (dpWidth == 0.dp) {
+                                    Modifier
+                                        .fillMaxSize()
+                                        .aspectRatio(1f)
+                                } else {
+                                    Modifier
+                                        .width(dpWidth)
+                                        .height(dpWidth)
+                                }
+                            )
+                            .clickable(
+                                remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = { appViewModel.setEvent(ImagePressed(url, index)) },
+                            )
+                    )
 
-                    LoadState.LOADING -> {
+                    if (previewState == LoadState.LOADING) {
                         ImageLoader(dpWidth)
                     }
 
-                    LoadState.FAIL -> {
+                    if (previewState == LoadState.FAIL) {
                         FailBox(url, dpWidth)
                     }
                 }
