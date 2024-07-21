@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gridtestapp.R
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
-import com.example.gridtestapp.logic.states.AppState
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.ui.other.index
 import org.koin.androidx.compose.get
@@ -33,17 +32,18 @@ import org.koin.androidx.compose.get
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun ImageFailDialog(
-    url: String,
-    onLoadAgain: () -> Unit,
+    onLoadAgain: (url: String, index: Int) -> Unit,
 ) {
     val appViewModel: AppViewModel = get()
     val appState by appViewModel.state.collectAsState()
 
-    val show = appState.showImageFailDialog.isSome { it == url }
+    appState.showImageFailDialog.onSome {url ->
 
-    if (show) {
-        val index = appState.imageStates.index(url)
-        val imageError = appState.imageStates[index].imageError
+        val index = appViewModel.imageStates.index(url)
+        val imageState = appViewModel.imageStates[index].value
+
+        val imageError = imageState.imageError
+
         imageError?.let {
             AlertDialog(onDismissRequest = { appViewModel.setEvent(DismissImageFailDialog) }) {
                 Box(
@@ -70,7 +70,7 @@ fun ImageFailDialog(
                                 modifier = Modifier.padding(top = 15.dp),
                                 onClick = {
                                     appViewModel.setEvent(DismissImageFailDialog)
-                                    onLoadAgain.invoke()
+                                    onLoadAgain.invoke(url, index)
                                 },
                             ) {
                                 Text(stringResource(id = R.string.load_again))

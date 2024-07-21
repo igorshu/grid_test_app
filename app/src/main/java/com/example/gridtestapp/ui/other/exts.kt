@@ -4,6 +4,7 @@ import androidx.compose.animation.core.*
 import com.example.gridtestapp.logic.states.ImageState
 import com.example.gridtestapp.logic.states.LoadState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -16,9 +17,9 @@ fun IntRange.size(): Int {
     return last - first
 }
 
-fun List<ImageState>.urls() = map { it.url }
+fun List<MutableStateFlow<ImageState>>.urls() = map { it.value.url }
 
-fun List<ImageState>.index(url: String) = indexOfFirst { it.url == url }
+fun List<StateFlow<ImageState>>.index(url: String) = indexOfFirst { it.value.url == url }
 
 fun List<ImageState>.notExists(url: String) : Boolean
     = firstOrNull { it.url == url && it.previewBitmap == null } != null

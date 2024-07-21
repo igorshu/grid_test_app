@@ -163,7 +163,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
                                         ImageContent(
                                             index,
                                             url,
-                                            appViewModel.state.value.imageStates.urls(),
+                                            appViewModel.imageStates.urls(),
                                             this@composable,
                                             this@SharedTransitionLayout,
                                             paddingValues = paddingValues,

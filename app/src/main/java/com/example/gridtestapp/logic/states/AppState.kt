@@ -16,14 +16,12 @@ enum class Theme {
     }
 }
 
+@Immutable
 data class AppState internal constructor (
 
     val theme: Theme,
     val loading: Boolean,
-    val imageStates: List<ImageState>,
     val showImageFailDialog: Option<String>,
-    val screenRange: IntRange,
-    val preloadRange: IntRange,
     val inetAvailable: Boolean,
     val showBack: Boolean,
     val showTopBar: Boolean,
@@ -38,10 +36,7 @@ data class AppState internal constructor (
         fun init(title: String): AppState = AppState(
             theme = Theme.BY_DEFAULT,
             loading = true,
-            imageStates = listOf(),
             showImageFailDialog = None,
-            screenRange = IntRange(0, 0),
-            preloadRange = IntRange(0, 0),
             inetAvailable = true,
             showBack = false,
             showTopBar = true,
@@ -56,10 +51,7 @@ data class AppState internal constructor (
 
     fun clear() = copy(
         loading = true,
-        imageStates = listOf(),
         showImageFailDialog = None,
-        screenRange = IntRange(0, 0),
-        preloadRange = IntRange(0, 0),
     )
 
     @Immutable

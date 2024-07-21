@@ -1,14 +1,13 @@
 package com.example.gridtestapp.logic.states
 
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.ImageBitmap
 
-@Immutable
+
 data class ImageState(
     val url: String,
-    val imageError: ImageError?,
-    val previewState: LoadState,
-    val previewBitmap: ImageBitmap?,
+    var imageError: ImageError?,
+    var previewState: LoadState,
+    var previewBitmap: ImageBitmap?,
 ) {
 
     override fun toString(): String {

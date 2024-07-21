@@ -38,6 +38,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -172,8 +173,6 @@ fun ImageGrid(
     ) {
         val gridState = rememberLazyGridState()
 
-        val appState by appViewModel.state.collectAsState()
-
         val dpWidth = get<ImageWidth>().dpWidth
 
         val density = LocalDensity.current
@@ -186,9 +185,11 @@ fun ImageGrid(
             }
         }
 
-        val selectedImage = appState.selectedImage
+        val imageStates = appViewModel.imageStates
 
-        val imageStates = appState.imageStates
+        val coroutineScope = rememberCoroutineScope()
+        val selectedImage = appViewModel.state.mapState(coroutineScope) { it.selectedImage }.collectAsState()
+        val currentImage = appViewModel.state.mapState(coroutineScope) { it.currentImage }.collectAsState()
 
         LazyVerticalGrid(
             state = gridState,
@@ -200,86 +201,84 @@ fun ImageGrid(
 
             itemsIndexed(
                 imageStates,
-                key = { index, imageState -> "$index. ${imageState.url}" },
-            ) { index, imageState ->
+                key = { index, imageState -> "$index. ${imageState.value.url}" },
+                contentType = { _, item ->
+                    when (item.value.previewState) {
+                        LoadState.IDLE,
+                        LoadState.LOADED -> "IMAGE"
+                        LoadState.FAIL -> "FAIL"
+                        LoadState.LOADING -> "LOADER"
+                    }
+                }
+            ) { index, imageStateItem ->
+
+                val imageState by imageStateItem.collectAsState()
+
 
                 val url = imageState.url
                 val previewState = imageState.previewState
-                Log.d("preview", "$index. $previewState")
+
+//                Log.d("preview", "$index. $previewState")
 
                 when (previewState) {
+                    LoadState.IDLE,
                     LoadState.LOADED -> {
                         val imageBitmap = imageState.previewBitmap
-                        if (imageBitmap != null) {
+                        val painter = if (imageBitmap == null) ColorPainter(Color.White) else BitmapPainter(imageBitmap)
 
-                            val interactionSource = remember { MutableInteractionSource() }
+                        with(sharedTransitionScope) {
 
-                            with(sharedTransitionScope) {
+                            val sharedContentState = rememberSharedContentState(key = index)
 
-                                val sharedContentState = rememberSharedContentState(key = index)
-
-                                val painter = remember(index) {
-                                    BitmapPainter(imageBitmap)
-                                }
-
-                                Image(
-                                    painter = painter,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .zIndex(
-                                            if (appState.currentImage?.index == index) { 1F } else { 0F }
-                                        )
-                                        .then(
-                                            if (selectedImage?.index == index) {
-                                                if (!selectedImage.consumed) {
-                                                    appViewModel.setEvent(ImagePressedNavigate(url, index))
-                                                }
-                                                Modifier.sharedBounds(
-                                                    sharedContentState,
-                                                    animatedVisibilityScope = animatedScope,
-                                                    renderInOverlayDuringTransition = false,
-                                                    boundsTransform = { initialBounds, targetBounds ->
-                                                        keyframes {
-                                                            durationMillis = animationDuration
-                                                            initialBounds at 0 using easing
-                                                            targetBounds at animationDuration
-                                                        }
-                                                    },
-                                                )
-                                            } else {
-                                                Modifier
+                            Image(
+                                painter = painter,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .zIndex(
+                                        if (currentImage.value?.index == index) { 1F } else { 0F }
+                                    )
+                                    .then(
+                                        if (selectedImage.value?.index == index) {
+                                            if (selectedImage.value?.consumed == false) {
+                                                appViewModel.setEvent( ImagePressedNavigate(url, index))
                                             }
-                                        )
-                                        .then(
-                                            if (dpWidth == 0.dp) {
-                                                Modifier
-                                                    .fillMaxSize()
-                                                    .aspectRatio(1f)
-                                            } else {
-                                                Modifier
-                                                    .width(dpWidth)
-                                                    .height(dpWidth)
-                                            }
-                                        )
-                                        .clickable(
-                                            interactionSource,
-                                            indication = null,
-                                            onClick = {
-                                                appViewModel.setEvent(ImagePressed(url, index))
-                                            },
-                                        )
-                                )
-                            }
-                        }
-                        else {
-                            Box(modifier = Modifier
-                                .aspectRatio(1.0f)
-                                .background(Color.Cyan)) {}
+                                            Modifier.sharedBounds(
+                                                sharedContentState,
+                                                animatedVisibilityScope = animatedScope,
+                                                renderInOverlayDuringTransition = false,
+                                                boundsTransform = { initialBounds, targetBounds ->
+                                                    keyframes {
+                                                        durationMillis = animationDuration
+                                                        initialBounds at 0 using easing
+                                                        targetBounds at animationDuration
+                                                    }
+                                                },
+                                            )
+                                        } else {
+                                            Modifier
+                                        }
+                                    )
+                                    .then(
+                                        if (dpWidth == 0.dp) {
+                                            Modifier
+                                                .fillMaxSize()
+                                                .aspectRatio(1f)
+                                        } else {
+                                            Modifier
+                                                .width(dpWidth)
+                                                .height(dpWidth)
+                                        }
+                                    )
+                                    .clickable(
+                                        remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = { appViewModel.setEvent(ImagePressed(url, index)) },
+                                    )
+                            )
                         }
                     }
 
-                    LoadState.IDLE,
                     LoadState.LOADING -> {
                         ImageLoader(dpWidth)
                     }
@@ -288,13 +287,10 @@ fun ImageGrid(
                         FailBox(url, dpWidth)
                     }
                 }
-
-                ImageFailDialog(
-                    url,
-                    onLoadAgain = { appViewModel.setEvent(LoadImageAgain(url, index)) }
-                )
             }
         }
+
+        ImageFailDialog { url, index -> LoadImageAgain(url, index) }
 
         LaunchedEffect(gridState) {
             snapshotFlow { gridState.layoutInfo.visibleItemsInfo }

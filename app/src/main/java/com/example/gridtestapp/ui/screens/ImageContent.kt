@@ -101,7 +101,7 @@ fun ImageContent(
                 val sharedContentState = rememberSharedContentState(key = index)
 
                 val urlState = imageState.originalUrlStates[url]
-                val itemImageState = appState.imageStates[index]
+                val itemImageState = remember { appViewModel.imageStates[index].value }
 
                 Box(
                     modifier = Modifier
@@ -197,10 +197,7 @@ fun ImageContent(
                         }
                     }
                 }
-                ImageFailDialog(
-                    url,
-                    onLoadAgain = { appViewModel.setEvent(LoadImageAgain(url, index)) }
-                )
+                ImageFailDialog { errorUrl, errorIndex -> appViewModel.setEvent(LoadImageAgain(errorUrl, errorIndex)) }
             }
         } else {
             Box(modifier = Modifier.fillMaxSize()) // чтобы не было странного поведения при удалении
