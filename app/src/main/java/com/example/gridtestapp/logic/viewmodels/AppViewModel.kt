@@ -87,6 +87,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     private val localRepo: LocalRepo by inject()
     private val connectionManager: ConnectionManager by inject()
 
+    var preloadRange: IntRange = 0..0
+
     private val handler = CoroutineExceptionHandler { _, exception -> showError(application, viewModelScope, exception) }
 
     private val appName = application.getString(application.applicationInfo.labelRes)
@@ -208,17 +210,6 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         }
     }
 
-//    private fun loadPreviewFromMemory(index: Int, url: String) {
-//        if (_state.value.imageStates.notExists(url)) {
-//            val imageStates = _state.value.imageStates
-//            if (imageStates[index].previewState == LoadState.IDLE) {
-//                viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
-//                    loadImage(url, index)
-//                }
-//            }
-//        } // else не нужен так как если preview exists состояние уже LOADED
-//    }
-
     /*
     *
     * Здесь чистим превью картинки из памяти за пределеми preload-а, и подгружаем внутри
@@ -282,6 +273,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 }
             }
         }
+
+        this.preloadRange = preloadRange
     }
 
     /*
@@ -293,33 +286,28 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
      */
 
     private fun restoreAfterDisconnect() {
-//        if (_state.value.imageStates.isEmpty()) {
-//            viewModelScope.launch(handler + Dispatchers.IO) {
-//                loadLinks()
-//            }
-//            return
-//        }
-//
-//        _state.value.imageStates.forEachIndexed { index, imageState ->
-//            if (imageState.previewState == LoadState.LOADING || imageState.previewState == LoadState.FAIL) {
-//                _state.update {
-//                    val imageStates = _state.value.imageStates.toMutableList()
-//                    imageStates[index] = ImageState(imageState.url, null, LoadState.IDLE, null)
-//                    it.copy(imageStates = imageStates)
-//                }
-//
-//            }
-//        }
-//
-//        _state
-//            .value
-//            .imageStates
-//            .subList(state.value.preloadRange.first, state.value.preloadRange.last)
-//            .forEachIndexed { index, imageState ->
-//                viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
-//                    loadImage(imageState.url, index)
-//                }
-//            }
+        if (imageStates.isEmpty()) {
+            viewModelScope.launch(handler + Dispatchers.IO) {
+                loadLinks()
+            }
+            return
+        }
+
+        imageStates.forEachIndexed { index, imageState ->
+            if (imageState.value.previewState == LoadState.LOADING || imageState.value.previewState == LoadState.FAIL) {
+                _imageStates[index].update {
+                    it.copy(imageError = null, previewState = LoadState.IDLE, previewBitmap = null)
+                }
+            }
+        }
+
+        imageStates
+            .subList(preloadRange.first, preloadRange.last)
+            .forEachIndexed { index, imageState ->
+                viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
+                    loadImage(imageState.value.url, index + preloadRange.first)
+                }
+            }
     }
 
     private val onEvent: OnAppEvent = { event ->
