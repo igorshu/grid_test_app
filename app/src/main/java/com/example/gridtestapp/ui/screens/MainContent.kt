@@ -265,16 +265,14 @@ fun ImageGrid(
 
                     if (previewState == LoadState.LOADING) {
                         ImageLoader(dpWidth)
-                    }
-
-                    if (previewState == LoadState.FAIL) {
+                    } else if (previewState == LoadState.FAIL) {
                         FailBox(url, dpWidth)
                     }
                 }
             }
         }
 
-        ImageFailDialog { url, index -> LoadImageAgain(url, index) }
+        ImageFailDialog { url, index -> appViewModel.setEvent(LoadImageAgain(url, index)) }
 
         LaunchedEffect(gridState) {
             snapshotFlow { gridState.layoutInfo.visibleItemsInfo }
