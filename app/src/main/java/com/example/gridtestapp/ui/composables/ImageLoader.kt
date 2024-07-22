@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 
 @Composable
 fun ImageLoader(dpWidth: Dp) {
@@ -23,7 +24,8 @@ fun ImageLoader(dpWidth: Dp) {
             Modifier
                 .width(dpWidth)
                 .height(dpWidth)
-        },
+        }
+            .zIndex(1f),
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))

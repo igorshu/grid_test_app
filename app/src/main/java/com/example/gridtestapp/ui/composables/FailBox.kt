@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.example.gridtestapp.R
 import com.example.gridtestapp.logic.events.ShowImageFailDialog
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
@@ -35,6 +36,7 @@ fun FailBox(
                 .width(dpWidth)
                 .height(dpWidth)
         }
+            .zIndex(1f)
             .clickable { appViewModel.setEvent(ShowImageFailDialog(url)) },
         contentAlignment = Alignment.Center,
     ) {

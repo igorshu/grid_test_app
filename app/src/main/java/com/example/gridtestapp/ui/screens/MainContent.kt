@@ -191,10 +191,6 @@ fun ImageGrid(
         val selectedImage = appViewModel.state.mapState(coroutineScope) { it.selectedImage }.collectAsState()
         val currentImage = appViewModel.state.mapState(coroutineScope) { it.currentImage }.collectAsState()
 
-        val theme by appViewModel.themeFlow.collectAsState(initial = remember { appViewModel.state.value.theme })
-        val isDark = theme.isDark(isSystemInDarkTheme())
-        val backgroundColor = (if (isDark) DarkColorScheme else LightColorScheme).background
-
         LazyVerticalGrid(
             state = gridState,
             modifier = Modifier.fillMaxSize(),
@@ -214,7 +210,7 @@ fun ImageGrid(
                 val previewState = imageState.previewState
 
                 val imageBitmap = imageState.previewBitmap
-                val painter = if (imageBitmap == null) ColorPainter(backgroundColor) else BitmapPainter(imageBitmap)
+                val painter = if (imageBitmap == null) ColorPainter(Color.Transparent) else BitmapPainter(imageBitmap)
 
                 with(sharedTransitionScope) {
 
