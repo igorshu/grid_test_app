@@ -31,6 +31,7 @@ import com.example.gridtestapp.logic.events.AppPaused
 import com.example.gridtestapp.logic.events.AppResumed
 import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.logic.events.ChangeVisibleRange
+import com.example.gridtestapp.logic.events.DisableSharedAnimation
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
 import com.example.gridtestapp.logic.events.GoBackFromImage
 import com.example.gridtestapp.logic.events.GotUrlIntent
@@ -339,6 +340,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                     showBack = true,
                     hideImage = false,
                     currentScreen = Screen.IMAGE,
+                    sharedAnimation = true,
                 )
             }
             is AddImageScreenEvent -> _state.update {
@@ -349,6 +351,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                     showBack = true,
                     hideImage = true,
                     currentScreen = Screen.ADD_IMAGE,
+                    sharedAnimation = true,
                 )
             }
             is SharePressed -> shareUrl(event.url)
@@ -381,8 +384,10 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             is ImagePressed -> imagePressed(event.url, event.index)
             is ImagePressedNavigate -> imagePressedNavigate(event.url, event.index)
             is GoBackFromImage -> {
-                _state.update { it.copy(hideImage = true) }
                 get<Routes>().goBack()
+            }
+            is DisableSharedAnimation -> {
+                _state.update { it.copy(sharedAnimation = false) }
             }
         }
     }
@@ -447,7 +452,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 _imageStates.apply { removeAt(index) }
             }
 
-            _state.update { it.copy(hideImage = true) }
+            _state.update { it.copy(hideImage = true, sharedAnimation = false) }
 
             MemoryManager.removeBothImages(url)
             CacheManager.removeBothImages(url)

@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.LayoutDirection
+import com.example.gridtestapp.logic.events.DisableSharedAnimation
 import com.example.gridtestapp.logic.events.Reload
 import com.example.gridtestapp.logic.events.RemoveImage
 import com.example.gridtestapp.logic.events.SharePressed
@@ -104,12 +105,7 @@ fun TopBar() {
                         Screen.IMAGE -> {
                             IconButton(onClick = {
                                 appState.currentImage?.let { imagePair ->
-                                    appViewModel.setEvent(
-                                        RemoveImage(
-                                            imagePair.url,
-                                            imagePair.index
-                                        )
-                                    )
+                                    appViewModel.setEvent(RemoveImage(imagePair.url, imagePair.index))
                                 }
                             }) {
                                 Icon(

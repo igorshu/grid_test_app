@@ -14,6 +14,8 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
@@ -154,7 +156,16 @@ class MainActivity : ComponentActivity(), KoinComponent {
                                     this@SharedTransitionLayout,
                                 )
                             }
-                            composable(Routes.IMAGE) { backStackEntry ->
+                            composable(
+                                Routes.IMAGE,
+                                exitTransition = {
+                                    if (!appViewModel.state.value.sharedAnimation) {
+                                        fadeOut(tween(700))
+                                    } else {
+                                        ExitTransition.None
+                                    }
+                                },
+                            ) { backStackEntry ->
                                 backStackEntry.arguments?.let { arguments ->
                                     val url = arguments.getString("url")
                                     val index = arguments.getString("index")?.toInt()

@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import com.example.gridtestapp.core.cache.MemoryManager
+import com.example.gridtestapp.logic.events.DisableSharedAnimation
 import com.example.gridtestapp.logic.events.GoBackFromImage
 import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.LoadOriginalImageFromDisk
@@ -56,9 +57,7 @@ import org.koin.core.parameter.parametersOf
 *   Экран с картинкой
 *
 */
-@OptIn(ExperimentalFoundationApi::class, ExperimentalSharedTransitionApi::class,
-    ExperimentalAnimationSpecApi::class
-)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun ImageContent(
     index: Int,
@@ -77,130 +76,134 @@ fun ImageContent(
 
     with(sharedTransitionScope) {
 
-        if (!appState.hideImage) {
-            val pagerState = rememberPagerState(
-                initialPage = imageState.index,
-                pageCount = { urls.size }
-            )
+        val pagerState = rememberPagerState(
+            initialPage = imageState.index,
+            pageCount = { urls.size }
+        )
 
-            LaunchedEffect(key1 = pagerState.currentPage) {
-                val currentPage = pagerState.currentPage
-                val currentUrl = urls[currentPage]
+        LaunchedEffect(key1 = pagerState.currentPage) {
+            val currentPage = pagerState.currentPage
+            val currentUrl = urls[currentPage]
 
-                imageViewModel.onEvent(ShowImageNotification(currentUrl))
-                appViewModel.setEvent(UpdateCurrentImage(currentUrl, currentPage))
-            }
+            imageViewModel.onEvent(ShowImageNotification(currentUrl))
+            appViewModel.setEvent(UpdateCurrentImage(currentUrl, currentPage))
+        }
 
-            val imagePadding = remember {
-                paddingValues
-            }
+        val imagePadding = remember {
+            paddingValues
+        }
 
-            HorizontalPager(state = pagerState) { index ->
-                val url = urls[index]
+        HorizontalPager(state = pagerState) { index ->
+            val url = urls[index]
 
-                val sharedContentState = rememberSharedContentState(key = index)
+            val sharedContentState = rememberSharedContentState(key = index)
 
-                val urlState = imageState.originalUrlStates[url]
-                val itemImageState = remember { appViewModel.imageStates[index].value }
+            val urlState = imageState.originalUrlStates[url]
+            val itemImageState = remember { appViewModel.imageStates[index].value }
 
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxSize(),
+                        .fillMaxSize()
+                        .padding(imagePadding),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(imagePadding),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val previewUrlState = itemImageState.previewState
-                        if (urlState == LOADED || previewUrlState == LOADED) {
-                            val originalImage = MemoryManager.getOriginalBitmap(url)
-                            val previewImage = itemImageState.previewBitmap
+                    val previewUrlState = itemImageState.previewState
+                    if (urlState == LOADED || previewUrlState == LOADED) {
+                        val originalImage = MemoryManager.getOriginalBitmap(url)
+                        val previewImage = itemImageState.previewBitmap
 
-                            val painter = if (originalImage != null) {
-                                BitmapPainter(originalImage)
-                            } else if (previewImage != null) {
-                                LaunchedEffect(key1 = url) {
-                                    imageViewModel.onEvent(LoadOriginalImageFromDisk(url, index))
-                                }
-                                BitmapPainter(previewImage)
-                            } else null
-
-                            if (painter != null) {
-                                val interactionSource = remember { MutableInteractionSource() }
-                                val zoomState = rememberZoomState(
-                                    minScale = 0.011f,
-                                    maxScale = 10f,
-                                    exitScale = 0.6f,
-                                    onExit = { zoomState ->
-                                        appViewModel.setEvent(GoBackFromImage)
-                                    }
-                                )
-
-                                val ratio = with(painter.intrinsicSize) { width / height }
-                                val modifier = if (ratio > 1) {
-                                    Modifier
-                                        .aspectRatio(ratio)
-                                        .fillMaxWidth()
-                                } else {
-                                    Modifier
-                                        .aspectRatio(ratio)
-                                        .fillMaxHeight()
-                                }
-
-                                Image(
-                                    painter = painter,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Fit,
-                                    modifier = modifier
-                                        .clickable(
-                                            interactionSource,
-                                            indication = null,
-                                        ) {
-                                            appViewModel.setEvent(ToggleFullScreen)
-                                        }
-                                        .sharedBounds(
-                                            sharedContentState,
-                                            animatedVisibilityScope = animatedScope,
-                                            renderInOverlayDuringTransition = false,
-                                            boundsTransform = { initialBounds, targetBounds ->
-                                                keyframes {
-                                                    durationMillis = animationDuration
-                                                    initialBounds at 0 using easing
-                                                    targetBounds at animationDuration
-                                                }
-                                            },
-                                        )
-                                        .zoomable(zoomState),
-                                )
-                            } else {
-                                Box(modifier = Modifier.aspectRatio(1.0f)) {}
+                        val painter = if (originalImage != null) {
+                            BitmapPainter(originalImage)
+                        } else if (previewImage != null) {
+                            LaunchedEffect(key1 = url) {
+                                imageViewModel.onEvent(LoadOriginalImageFromDisk(url, index))
                             }
-                        } else {
-                            if (previewUrlState == FAIL || urlState == FAIL) {
-                                FailBox(url, get<ImageWidth>().dpWidth)
+                            BitmapPainter(previewImage)
+                        } else null
+
+                        if (painter != null) {
+                            val interactionSource = remember { MutableInteractionSource() }
+                            val zoomState = rememberZoomState(
+                                minScale = 0.011f,
+                                maxScale = 10f,
+                                exitScale = 0.6f,
+                                onExit = { _ ->
+                                    appViewModel.setEvent(DisableSharedAnimation)
+                                    appViewModel.setEvent(GoBackFromImage)
+                                }
+                            )
+
+                            val ratio = with(painter.intrinsicSize) { width / height }
+                            val modifier = if (ratio > 1) {
+                                Modifier
+                                    .aspectRatio(ratio)
+                                    .fillMaxWidth()
                             } else {
-                                Box(
-                                    modifier = Modifier.aspectRatio(1.0f),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
-                                    LaunchedEffect(key1 = url) {
-                                        imageViewModel.onEvent(
-                                            LoadOriginalImageFromDisk(url, index)
-                                        )
+                                Modifier
+                                    .aspectRatio(ratio)
+                                    .fillMaxHeight()
+                            }
+
+                            Image(
+                                painter = painter,
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = modifier
+                                    .clickable(
+                                        interactionSource,
+                                        indication = null,
+                                    ) {
+                                        appViewModel.setEvent(ToggleFullScreen)
                                     }
+                                    .then(
+                                        if (appState.sharedAnimation) {
+                                            Modifier
+                                                .sharedBounds(
+                                                    sharedContentState,
+                                                    animatedVisibilityScope = animatedScope,
+                                                    renderInOverlayDuringTransition = false,
+                                                    boundsTransform = { initialBounds, targetBounds ->
+                                                        keyframes {
+                                                            durationMillis = animationDuration
+                                                            initialBounds at 0 using easing
+                                                            targetBounds at animationDuration
+                                                        }
+                                                    },
+                                                )
+                                        } else {
+                                            Modifier
+                                        }
+                                    )
+                                    .zoomable(zoomState),
+                            )
+                        } else {
+                            Box(modifier = Modifier.aspectRatio(1.0f)) {}
+                        }
+                    } else {
+                        if (previewUrlState == FAIL || urlState == FAIL) {
+                            FailBox(url, get<ImageWidth>().dpWidth)
+                        } else {
+                            Box(
+                                modifier = Modifier.aspectRatio(1.0f),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.fillMaxSize(0.25f))
+                                LaunchedEffect(key1 = url) {
+                                    imageViewModel.onEvent(
+                                        LoadOriginalImageFromDisk(url, index)
+                                    )
                                 }
                             }
                         }
                     }
                 }
-                ImageFailDialog { errorUrl, errorIndex -> appViewModel.setEvent(LoadImageAgain(errorUrl, errorIndex)) }
             }
-        } else {
-            Box(modifier = Modifier.fillMaxSize()) // чтобы не было странного поведения при удалении
+            ImageFailDialog { errorUrl, errorIndex -> appViewModel.setEvent(LoadImageAgain(errorUrl, errorIndex)) }
         }
     }
 }
