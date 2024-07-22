@@ -29,6 +29,14 @@ class Routes() {
         }
     }
 
+    fun replaceToMain() {
+        navController.navigate(Routes.MAIN) {
+            popUpTo(Routes.MAIN) {
+                inclusive = true
+            }
+        }
+    }
+
     fun setController(navController: NavHostController) {
         this.navController = navController
     }

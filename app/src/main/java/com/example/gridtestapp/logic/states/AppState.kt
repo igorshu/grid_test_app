@@ -30,7 +30,6 @@ data class AppState internal constructor (
     val currentScreen: Screen,
     val currentImage: ImagePair?,
     val selectedImage: ImageSelected?,
-    val hideImage: Boolean,
     val sharedAnimation: Boolean,
 ) {
     companion object {
@@ -46,7 +45,6 @@ data class AppState internal constructor (
             currentScreen = Screen.MAIN,
             currentImage = null,
             selectedImage = null,
-            hideImage = false,
             sharedAnimation = true,
         )
     }

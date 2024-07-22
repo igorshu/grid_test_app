@@ -335,7 +335,6 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                     title = event.url,
                     currentImage = AppState.ImagePair(event.url, event.index),
                     showBack = true,
-                    hideImage = false,
                     currentScreen = Screen.IMAGE,
                     sharedAnimation = true,
                 )
@@ -346,7 +345,6 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                     showSystemBars = true,
                     title = event.url,
                     showBack = true,
-                    hideImage = true,
                     currentScreen = Screen.ADD_IMAGE,
                     sharedAnimation = true,
                 )
@@ -444,11 +442,11 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     private fun removeImage(url: String, index: Int) {
         viewModelScope.launch(handler + Dispatchers.IO) {
 
-            viewModelScope.launch(handler + Dispatchers.Main.immediate) {
+            viewModelScope.launch(handler + Dispatchers.Main) {
                 _imageStates.apply { removeAt(index) }
+                _state.update { it.copy(sharedAnimation = false) }
             }
 
-            _state.update { it.copy(hideImage = true, sharedAnimation = false) }
 
             MemoryManager.removeBothImages(url)
             CacheManager.removeBothImages(url)
@@ -456,7 +454,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             localRepo.urls = imageStates.urls()
 
             viewModelScope.launch(handler + Dispatchers.Main) {
-                get<Routes>().navigate(Routes.MAIN)
+                get<Routes>().replaceToMain()
             }
         }
     }

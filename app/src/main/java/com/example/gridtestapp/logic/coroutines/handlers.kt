@@ -20,6 +20,7 @@ typealias UnknownFail = (throwable: Throwable) -> Unit
 
 fun showError(context: Context, coroutineScope: CoroutineScope, throwable: Throwable) {
     coroutineScope.launch {
+        Log.e("Error", throwable.toString())
         Toast.makeText(context, throwable.message, Toast.LENGTH_LONG).show()
     }
 }
