@@ -115,12 +115,13 @@ fun MainContent(
 @Composable
 fun ToggleButtons() {
     val appViewModel: AppViewModel = get()
+    val appState by appViewModel.state.collectAsState()
 
     val primarySelection = remember {
-        appViewModel.state.value.theme
+        appState.theme
     }
 
-    val theme by appViewModel.themeFlow.collectAsState(initial = remember { appViewModel.state.value.theme })
+    val theme = appState.theme
 
     val context = LocalContext.current
     val buttonTexts = remember {

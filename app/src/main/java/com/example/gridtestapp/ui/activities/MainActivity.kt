@@ -21,7 +21,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -95,8 +94,8 @@ class MainActivity : ComponentActivity(), KoinComponent {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
 
         addCallBackDispatcher()
 
@@ -113,7 +112,8 @@ class MainActivity : ComponentActivity(), KoinComponent {
                     parseIntent(intent)
                 }
 
-                val theme by appViewModel.themeFlow.collectAsState(initial = remember { appViewModel.state.value.theme })
+                val appState by appViewModel.state.collectAsState()
+                val theme = appState.theme
 
                 get<Routes>().setController(navController)
 
@@ -131,7 +131,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
                             }
                         }
 
-                        val showSystemBars by appViewModel.systemBarsFlow.collectAsState(initial = true)
+                        val showSystemBars = appState.showSystemBars
 
                         val systemUiController: SystemUiController = rememberSystemUiController()
                         LaunchedEffect(key1 = showSystemBars) {

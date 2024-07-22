@@ -39,100 +39,66 @@ fun TopBar() {
     val appViewModel: AppViewModel = get()
     val appState by appViewModel.state.collectAsState()
 
-    val windowInsets = TopAppBarDefaults.windowInsets
-    val density = LocalDensity.current
-
-    val showTopBar by remember {
-        derivedStateOf {
-            appState.showTopBar
-        }
-    }
-
-    if (showTopBar) {
-        val layoutDirection = LayoutDirection.Ltr
-        val insets = WindowInsets(
-            left = windowInsets.getLeft(density, layoutDirection),
-            top = 0,
-            right = windowInsets.getRight(density, layoutDirection),
-            bottom = windowInsets.getBottom(density),
-            )
-        Box(
-            modifier = Modifier
-                .statusBarsPadding()
-        ) {
-            TopAppBar(
-                modifier = Modifier,
-                windowInsets = insets,
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    navigationIconContentColor = Color.White,
-                    titleContentColor = Color.White,
-                    containerColor = MaterialTheme.colorScheme.tertiary,
-                ),
-                title = { Text(appState.title, maxLines = 1) },
-                navigationIcon = {
-                    val showBack by remember {
-                        derivedStateOf {
-                            appState.showBack
-                        }
+    if (appState.showTopBar) {
+        TopAppBar(
+            modifier = Modifier,
+            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                navigationIconContentColor = Color.White,
+                titleContentColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.tertiary,
+            ),
+            title = { Text(appState.title, maxLines = 1) },
+            navigationIcon = {
+                if (appState.showBack) {
+                    val routes = get<Routes>()
+                    IconButton(onClick = { routes.goBack() }) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Go back"
+                        )
                     }
-                    if (showBack) {
-                        val routes = get<Routes>()
-                        IconButton(onClick = { routes.goBack() }) {
+                }
+            },
+            actions = {
+                when (appState.currentScreen) {
+                    Screen.MAIN -> {
+                        IconButton(onClick = { appViewModel.setEvent(Reload) }) {
                             Icon(
-                                imageVector = Icons.Filled.ArrowBack,
-                                contentDescription = "Go back"
+                                imageVector = Icons.Filled.Refresh,
+                                contentDescription = "Share",
+                                tint = Color.White
                             )
                         }
                     }
-                },
-                actions = {
-                    val currentScreen by remember {
-                        derivedStateOf {
-                            appState.currentScreen
+
+                    Screen.IMAGE -> {
+                        IconButton(onClick = {
+                            appState.currentImage?.let { imagePair ->
+                                appViewModel.setEvent(RemoveImage(imagePair.url, imagePair.index))
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = "Delete",
+                                tint = Color.White
+                            )
+                        }
+                        IconButton(onClick = {
+                            appState.currentImage?.let { imagePair ->
+                                appViewModel.setEvent(SharePressed(imagePair.url))
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.Share,
+                                contentDescription = "Share",
+                                tint = Color.White
+                            )
                         }
                     }
-                    when (currentScreen) {
-                        Screen.MAIN -> {
-                            IconButton(onClick = { appViewModel.setEvent(Reload) }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Refresh,
-                                    contentDescription = "Share",
-                                    tint = Color.White
-                                )
-                            }
-                        }
 
-                        Screen.IMAGE -> {
-                            IconButton(onClick = {
-                                appState.currentImage?.let { imagePair ->
-                                    appViewModel.setEvent(RemoveImage(imagePair.url, imagePair.index))
-                                }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Delete,
-                                    contentDescription = "Delete",
-                                    tint = Color.White
-                                )
-                            }
-                            IconButton(onClick = {
-                                appState.currentImage?.let { imagePair ->
-                                    appViewModel.setEvent(SharePressed(imagePair.url))
-                                }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Share,
-                                    contentDescription = "Share",
-                                    tint = Color.White
-                                )
-                            }
-                        }
-
-                        Screen.ADD_IMAGE -> {}
-                    }
+                    Screen.ADD_IMAGE -> {}
                 }
-            )
-        }
-    } else {
-        Box {}
+            }
+        )
     }
 }

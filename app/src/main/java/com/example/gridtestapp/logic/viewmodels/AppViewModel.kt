@@ -88,7 +88,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     private val localRepo: LocalRepo by inject()
     private val connectionManager: ConnectionManager by inject()
 
-    var preloadRange: IntRange = 0..0
+    private var preloadRange: IntRange = 0..0
 
     private val handler = CoroutineExceptionHandler { _, exception -> showError(application, viewModelScope, exception) }
 
@@ -96,9 +96,6 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
     private val _state: MutableStateFlow<AppState> = MutableStateFlow(AppState.init(appName))
     val state: StateFlow<AppState> = _state.asStateFlow()
-
-    val themeFlow = state.map { it.theme }
-    val systemBarsFlow = state.map { it.showSystemBars }
 
     private var _imageStates: MutableList<MutableStateFlow<ImageState>> = mutableListOf()
     val imageStates: List<MutableStateFlow<ImageState>>
@@ -362,7 +359,6 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             }
             is ChangeVisibleRange -> {
                 previewsJob?.cancel()
-//                Log.d("range", "cancel")
                 previewsJob = viewModelScope.launch(handler + Dispatchers.Default) {
                     handlePreviews(event.visibleRange, this)
                 }

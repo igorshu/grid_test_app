@@ -2,7 +2,6 @@ package com.example.gridtestapp.ui.other
 
 import androidx.compose.animation.core.*
 import com.example.gridtestapp.logic.states.ImageState
-import com.example.gridtestapp.logic.states.LoadState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
