@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import com.example.gridtestapp.R
+import com.example.gridtestapp.ui.activities.MainActivity.Companion.ADD_URL
 import com.example.gridtestapp.ui.theme.DarkColorScheme
 import com.example.gridtestapp.ui.theme.LightColorScheme
 import kotlinx.coroutines.delay
@@ -31,10 +32,6 @@ import kotlinx.coroutines.launch
 
 @SuppressLint("CustomSplashScreen")
 class SplashActivity: ComponentActivity() {
-
-    companion object {
-        const val ADD_URL = "Add.Url"
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

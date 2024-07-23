@@ -33,7 +33,6 @@ import com.example.gridtestapp.logic.events.AppPaused
 import com.example.gridtestapp.logic.events.AppResumed
 import com.example.gridtestapp.logic.events.GotUrlIntent
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
-import com.example.gridtestapp.ui.activities.SplashActivity.Companion.ADD_URL
 import com.example.gridtestapp.ui.composables.TopBar
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.other.urls
@@ -51,6 +50,10 @@ class MainActivity : ComponentActivity(), KoinComponent {
 
     private val notificationsManager: NotificationsManager by inject()
     private val routes: Routes by inject()
+
+    companion object {
+        const val ADD_URL = "Add.Url"
+    }
 
     private fun addCallBackDispatcher() {
         onBackPressedDispatcher.addCallback(this, object: OnBackPressedCallback(true) {
