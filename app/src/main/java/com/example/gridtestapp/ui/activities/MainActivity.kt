@@ -131,9 +131,6 @@ class MainActivity : ComponentActivity(), KoinComponent {
                     }
 
                     enableEdgeToEdge(barStyle, barStyle)
-                    if (Build.VERSION.SDK_INT >= 29) {
-                        window.isNavigationBarContrastEnforced = false
-                    }
                 }
 
 
