@@ -4,10 +4,12 @@ package com.example.gridtestapp.ui.activities
 
 import android.content.Intent
 import android.content.pm.PackageManager.PERMISSION_GRANTED
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.EnterTransition
@@ -22,6 +24,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigation.compose.NavHost
@@ -39,7 +42,9 @@ import com.example.gridtestapp.ui.other.urls
 import com.example.gridtestapp.ui.screens.AddImageContent
 import com.example.gridtestapp.ui.screens.ImageContent
 import com.example.gridtestapp.ui.screens.MainContent
+import com.example.gridtestapp.ui.theme.DarkColorScheme
 import com.example.gridtestapp.ui.theme.GridTestAppTheme
+import com.example.gridtestapp.ui.theme.LightColorScheme
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import org.koin.android.ext.android.inject
@@ -97,7 +102,6 @@ class MainActivity : ComponentActivity(), KoinComponent {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         addCallBackDispatcher()
@@ -118,10 +122,25 @@ class MainActivity : ComponentActivity(), KoinComponent {
                 val appState by appViewModel.state.collectAsState()
                 val theme = appState.theme
 
+                val isDark = theme.isDark(systemTheme = isSystemInDarkTheme())
+                LaunchedEffect(key1 = theme) {
+                    val barStyle = if (isDark) {
+                        SystemBarStyle.dark(DarkColorScheme.primary.toArgb())
+                    } else {
+                        SystemBarStyle.light(LightColorScheme.primary.toArgb(), DarkColorScheme.primary.toArgb())
+                    }
+
+                    enableEdgeToEdge(barStyle, barStyle)
+                    if (Build.VERSION.SDK_INT >= 29) {
+                        window.isNavigationBarContrastEnforced = false
+                    }
+                }
+
+
                 get<Routes>().setController(navController)
 
                 GridTestAppTheme(
-                    darkTheme = theme.isDark(systemTheme = isSystemInDarkTheme())
+                    darkTheme = isDark
                 ) {
                     Scaffold(
                         topBar = { TopBar() },
