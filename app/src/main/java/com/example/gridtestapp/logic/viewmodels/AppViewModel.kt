@@ -66,7 +66,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -407,7 +406,6 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
     private fun addImageToTop(url: String) {
         viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
-
             if (CacheManager.isCached(url)) {
                 val bitmap = CacheManager.previewImageBitmap(url)
                 if (bitmap != null) {
@@ -415,8 +413,11 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
                     viewModelScope.launch(handler + Dispatchers.Main.immediate) {
                         _imageStates.apply {
-                            val index = index(url)
-                            removeAt(index)
+                            index(url).let {
+                                if (it != -1) {
+                                    removeAt(it)
+                                }
+                            }
                             add(0, MutableStateFlow(ImageState(url, null, LoadState.LOADED, bitmap)))
                         }
                     }
