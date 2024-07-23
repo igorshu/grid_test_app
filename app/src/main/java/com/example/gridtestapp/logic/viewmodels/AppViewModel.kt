@@ -232,12 +232,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
                     if (previewState == LoadState.IDLE) {
 
-                        val usualContext = handler + Dispatchers.IO
-
-                        viewModelScope.launch(usualContext) {
-                            if (index > 0) {
-                                delay(17L)
-                            }
+                        val usualImageContext = _imageExceptionHandler + imageCacheDispatcher
+                        viewModelScope.launch(usualImageContext) {
                             val url = imageState.value.url
                             if (CacheManager.isNotCached(url)) {
 
@@ -248,11 +244,9 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                                     }
                                 }
 
-                                viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
+                                viewModelScope.launch(usualImageContext) {
                                     if (CacheManager.loadImage(url)) {
-                                        viewModelScope.launch(usualContext) {
-                                            setLoadedState(url, index)
-                                        }
+                                        setLoadedState(url, index)
                                     }
                                 }
                             } else {
