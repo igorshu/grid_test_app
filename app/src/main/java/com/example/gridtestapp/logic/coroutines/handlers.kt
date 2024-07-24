@@ -54,6 +54,7 @@ fun imageExceptionHandler(
                 }
                 else -> {
                     Log.e("Error", throwable.toString())
+                    Log.e("Error", throwable.stackTraceToString())
                     unknownFail(throwable)
                 }
             }

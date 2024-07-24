@@ -5,7 +5,9 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.net.Uri
+import android.util.Log
 import android.webkit.URLUtil
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.example.gridtestapp.logic.viewmodels.ImageWidth
@@ -28,6 +30,7 @@ import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.math.floor
 import kotlin.math.min
 
 /*
@@ -38,6 +41,8 @@ import kotlin.math.min
 *   для превью и оригинал.
 *
  */
+
+typealias AndroidColor = android.graphics.Color
 
 object CacheManager: KoinComponent {
 
@@ -106,6 +111,47 @@ object CacheManager: KoinComponent {
             }
 
             cont.resume(true)
+        }
+    }
+
+    private fun getAvgColor(bitmap: Bitmap, directionX: Int, directionY: Int, x: Int, y: Int, step: Int): Color {
+        val avgColor = try {
+            val count = 5
+            val pixels = mutableListOf<Int>()
+            repeat(count) {
+                val pixelX = x + directionX * it * step
+                val pixelY = y + directionY * it * step
+                val pixel = bitmap.getPixel(pixelX, pixelY)
+                pixels.add(pixel)
+            }
+
+            val size = pixels.size
+            val colors =  pixels.fold(intArrayOf(0, 0, 0)) { acc, it ->
+                acc[0] += AndroidColor.red(it)
+                acc[1] += AndroidColor.green(it)
+                acc[2] += AndroidColor.blue(it)
+                acc
+            }.map { it / size }
+
+            Color(red = colors[0], green = colors[1], blue = colors[2])
+        } catch (e: Exception) {
+            Log.d("color", e.toString())
+            e.printStackTrace()
+            return Color.Cyan
+        }
+        return avgColor
+    }
+
+    fun imageColors(bitmap: Bitmap): ImageColors {
+        return with(bitmap) {
+            val step = floor(width.toFloat() / 25f).toInt()
+            ImageColors(
+                topLeft = getAvgColor(this, 1, 1, 0, 0, step),
+                topRight = getAvgColor(this, -1, 1, width - 1, 0, step),
+                bottomRight = getAvgColor(this, -1, -1, width - 1, height - 1, step),
+                bottomLeft = getAvgColor(this, 1, -1, 0, height - 1, step),
+                center = getAvgColor(this, 1, -1, width/2 - 10, height/2 - 10, step),
+            )
         }
     }
 

@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlin.random.Random
 
 const val animationDuration = 400
 val easing = EaseInOutCubic
@@ -33,3 +34,5 @@ fun <T, R> StateFlow<T>.mapState(
         SharingStarted.Lazily,
         transform(value)
     )
+
+fun Float.shake(r: Int = 5): Float = this + Random.nextInt(-r, r)

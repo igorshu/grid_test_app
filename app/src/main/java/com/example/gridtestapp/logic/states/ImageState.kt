@@ -1,6 +1,7 @@
 package com.example.gridtestapp.logic.states
 
 import androidx.compose.ui.graphics.ImageBitmap
+import com.example.gridtestapp.core.cache.ImageColors
 
 
 data class ImageState(
@@ -8,6 +9,7 @@ data class ImageState(
     var imageError: ImageError?,
     var previewState: LoadState,
     var previewBitmap: ImageBitmap?,
+    var imageColors: ImageColors?,
 ) {
 
     override fun toString(): String {

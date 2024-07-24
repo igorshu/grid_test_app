@@ -36,6 +36,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.ColorPainter
@@ -46,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat.getString
 import com.example.gridtestapp.R
+import com.example.gridtestapp.core.cache.ImageColors
 import com.example.gridtestapp.logic.events.ChangeTheme
 import com.example.gridtestapp.logic.events.ChangeVisibleRange
 import com.example.gridtestapp.logic.events.ImagePressed
@@ -60,9 +63,11 @@ import com.example.gridtestapp.ui.composables.FailBox
 import com.example.gridtestapp.ui.composables.ImageFailDialog
 import com.example.gridtestapp.ui.composables.ImageLoader
 import com.example.gridtestapp.ui.composables.Loader
+import com.example.gridtestapp.ui.other.MultiBrushPainter
 import com.example.gridtestapp.ui.other.animationDuration
 import com.example.gridtestapp.ui.other.easing
 import com.example.gridtestapp.ui.other.mapState
+import com.example.gridtestapp.ui.other.shake
 import com.example.gridtestapp.ui.theme.DarkColorScheme
 import com.example.gridtestapp.ui.theme.LightColorScheme
 import com.robertlevonyan.compose.buttontogglegroup.RowToggleButtonGroup
@@ -175,6 +180,7 @@ fun ImageGrid(
         val gridState = rememberLazyGridState()
 
         val dpWidth = get<ImageWidth>().dpWidth
+        val pxWidth = get<ImageWidth>().pxWidth
 
         val density = LocalDensity.current
         LaunchedEffect(gridState) {
@@ -211,7 +217,17 @@ fun ImageGrid(
                 val previewState = imageState.previewState
 
                 val imageBitmap = imageState.previewBitmap
-                val painter = if (imageBitmap == null) ColorPainter(Color.Transparent) else BitmapPainter(imageBitmap)
+                val imageColors = imageState.imageColors
+
+                val painter = if (imageBitmap == null) {
+                    if (imageColors == null) {
+                        ColorPainter(Color.Transparent)
+                    } else {
+                        multiBrushPainter(pxWidth, imageColors)
+                    }
+                } else {
+                    BitmapPainter(imageBitmap)
+                }
 
                 with(sharedTransitionScope) {
 
@@ -287,4 +303,42 @@ fun ImageGrid(
                 }
         }
     }
+}
+
+@Composable
+private fun multiBrushPainter(
+    pxWidth: Int,
+    imageColors: ImageColors
+): MultiBrushPainter {
+    val side = pxWidth.toFloat()
+    val radius = side * 0.9f
+    return MultiBrushPainter(
+        listOf(
+            Brush.radialGradient(
+                colorStops = arrayOf(Pair(.1f, imageColors.center), Pair(1f, Color.Transparent)),
+                center = Offset((side / 2).shake(10), (side / 2).shake(10)),
+                radius = side * 0.8f,
+            ),
+            Brush.radialGradient(
+                colorStops = arrayOf(Pair(.2f, imageColors.topLeft), Pair(1f, Color.Transparent)),
+                Offset(0f.shake(), 0f.shake()),
+                radius
+            ),
+            Brush.radialGradient(
+                colorStops = arrayOf(Pair(.2f, imageColors.topRight), Pair(1f, Color.Transparent)),
+                Offset(side.shake(), 0f.shake()),
+                radius
+            ),
+            Brush.radialGradient(
+                colorStops = arrayOf(Pair(.2f, imageColors.bottomLeft), Pair(1f, Color.Transparent)),
+                Offset(0f.shake(), side.shake()),
+                radius
+            ),
+            Brush.radialGradient(
+                colorStops = arrayOf(Pair(.2f, imageColors.bottomRight), Pair(1f, Color.Transparent)),
+                 Offset(side.shake(), side.shake()),
+                radius
+            ),
+        )
+    )
 }

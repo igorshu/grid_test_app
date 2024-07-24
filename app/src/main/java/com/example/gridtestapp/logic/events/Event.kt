@@ -31,7 +31,6 @@ data class ImagePressedNavigate(val url: String, val index: Int) : AppEvent()
 data object GoBackFromImage : AppEvent()
 data object DisableSharedAnimation : AppEvent()
 
-
 // События основного экрана
 
 sealed class MainEvent

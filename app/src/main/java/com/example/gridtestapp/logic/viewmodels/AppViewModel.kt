@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import arrow.core.None
@@ -166,7 +167,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             }
         }).toMutableStateList()
 
-        val imStates = urls.map { url -> MutableStateFlow(ImageState( url, null, LoadState.IDLE, null)) }.toMutableList()
+        val imStates = urls.map { url -> MutableStateFlow(ImageState( url, null, LoadState.IDLE, null, null)) }.toMutableList()
 
         viewModelScope.launch(handler + Dispatchers.Main) {
             _state.update { it.copy(loading = false)}
@@ -193,9 +194,11 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         if (bitmap != null) {
             bitmap.prepareToDraw()
 
+            val imageColors = CacheManager.imageColors(bitmap.asAndroidBitmap())
+
             viewModelScope.launch(handler + Dispatchers.Main) {
                 _imageStates[index].update {
-                    it.copy(imageError = null, previewState = LoadState.LOADED, previewBitmap = bitmap)
+                    it.copy(imageError = null, previewState = LoadState.LOADED, previewBitmap = bitmap, imageColors = imageColors)
                 }
             }
         }
@@ -411,6 +414,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 if (bitmap != null) {
                     bitmap.prepareToDraw()
 
+                    val imageColors = CacheManager.imageColors(bitmap.asAndroidBitmap())
+
                     viewModelScope.launch(handler + Dispatchers.Main.immediate) {
                         _imageStates.apply {
                             index(url).let {
@@ -418,7 +423,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                                     removeAt(it)
                                 }
                             }
-                            add(0, MutableStateFlow(ImageState(url, null, LoadState.LOADED, bitmap)))
+                            add(0, MutableStateFlow(ImageState(url, null, LoadState.LOADED, bitmap, imageColors)))
                         }
                     }
                 }
