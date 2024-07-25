@@ -4,7 +4,7 @@ package com.example.gridtestapp.ui.activities
 
 import android.content.Intent
 import android.content.pm.PackageManager.PERMISSION_GRANTED
-import android.os.Build
+import android.graphics.Color
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -102,6 +102,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge() // не ошибка - если не вызвать, потом прозрачный статус бар не установить
         super.onCreate(savedInstanceState)
 
         addCallBackDispatcher()
@@ -121,16 +122,23 @@ class MainActivity : ComponentActivity(), KoinComponent {
 
                 val appState by appViewModel.state.collectAsState()
                 val theme = appState.theme
+                val showSystemBars = appState.showSystemBars
 
                 val isDark = theme.isDark(systemTheme = isSystemInDarkTheme())
-                LaunchedEffect(key1 = theme) {
-                    val barStyle = if (isDark) {
-                        SystemBarStyle.dark(DarkColorScheme.primary.toArgb())
+                val systemUiController: SystemUiController = rememberSystemUiController()
+                LaunchedEffect(key1 = theme, key2 = showSystemBars) {
+                    setSystemBars(showSystemBars, systemUiController)
+                    if (showSystemBars) {
+                        val barStyle = if (isDark) {
+                            SystemBarStyle.dark(DarkColorScheme.primary.toArgb())
+                        } else {
+                            SystemBarStyle.light(LightColorScheme.primary.toArgb(), DarkColorScheme.primary.toArgb())
+                        }
+                        enableEdgeToEdge(barStyle, barStyle)
                     } else {
-                        SystemBarStyle.light(LightColorScheme.primary.toArgb(), DarkColorScheme.primary.toArgb())
+                        val transparentBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
+                        enableEdgeToEdge(transparentBarStyle, transparentBarStyle)
                     }
-
-                    enableEdgeToEdge(barStyle, barStyle)
                 }
 
 
@@ -148,13 +156,6 @@ class MainActivity : ComponentActivity(), KoinComponent {
                             onPauseOrDispose {
                                 appViewModel.setEvent(AppPaused)
                             }
-                        }
-
-                        val showSystemBars = appState.showSystemBars
-
-                        val systemUiController: SystemUiController = rememberSystemUiController()
-                        LaunchedEffect(key1 = showSystemBars) {
-                            setSystemBars(showSystemBars, systemUiController)
                         }
 
                         NavHost(
