@@ -57,7 +57,7 @@ fun TopBar() {
                         IconButton(onClick = { appViewModel.setEvent(Reload) }) {
                             Icon(
                                 imageVector = Icons.Filled.Refresh,
-                                contentDescription = "Share",
+                                contentDescription = "Refresh",
                                 tint = Color.White
                             )
                         }

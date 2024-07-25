@@ -30,6 +30,8 @@ data class ImagePressed(val url: String, val index: Int) : AppEvent()
 data class ImagePressedNavigate(val url: String, val index: Int) : AppEvent()
 data object GoBackFromImage : AppEvent()
 data object DisableSharedAnimation : AppEvent()
+data class Move(val fromIndex: Int, val toIndex: Int) : AppEvent()
+data object Test : AppEvent()
 
 // События основного экрана
 

@@ -21,6 +21,7 @@ data class AppState internal constructor (
 
     val theme: Theme,
     val loading: Boolean,
+    val imageStatesHashcode: Int?,
     val showImageFailDialog: Option<String>,
     val inetAvailable: Boolean,
     val showBack: Boolean,
@@ -36,6 +37,7 @@ data class AppState internal constructor (
         fun init(title: String): AppState = AppState(
             theme = Theme.BY_DEFAULT,
             loading = true,
+            imageStatesHashcode = null,
             showImageFailDialog = None,
             inetAvailable = true,
             showBack = false,

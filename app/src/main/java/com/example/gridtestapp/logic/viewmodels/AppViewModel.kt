@@ -41,11 +41,13 @@ import com.example.gridtestapp.logic.events.ImagePressedNavigate
 import com.example.gridtestapp.logic.events.ImageScreenEvent
 import com.example.gridtestapp.logic.events.LoadImageAgain
 import com.example.gridtestapp.logic.events.MainScreenEvent
+import com.example.gridtestapp.logic.events.Move
 import com.example.gridtestapp.logic.events.OnAppEvent
 import com.example.gridtestapp.logic.events.Reload
 import com.example.gridtestapp.logic.events.RemoveImage
 import com.example.gridtestapp.logic.events.SharePressed
 import com.example.gridtestapp.logic.events.ShowImageFailDialog
+import com.example.gridtestapp.logic.events.Test
 import com.example.gridtestapp.logic.events.ToggleFullScreen
 import com.example.gridtestapp.logic.events.UpdateCurrentImage
 import com.example.gridtestapp.logic.states.AppState
@@ -57,6 +59,7 @@ import com.example.gridtestapp.logic.states.Theme
 import com.example.gridtestapp.ui.navigation.Routes
 import com.example.gridtestapp.ui.other.index
 import com.example.gridtestapp.ui.other.size
+import com.example.gridtestapp.ui.other.swap
 import com.example.gridtestapp.ui.other.urls
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -170,8 +173,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         val imStates = urls.map { url -> MutableStateFlow(ImageState( url, null, LoadState.IDLE, null, null)) }.toMutableList()
 
         viewModelScope.launch(handler + Dispatchers.Main) {
-            _state.update { it.copy(loading = false)}
             _imageStates = imStates
+            _state.update { it.copy(loading = false, imageStatesHashcode = _imageStates.hashCode())}
         }
     }
 
@@ -378,6 +381,13 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             }
             is DisableSharedAnimation -> {
                 _state.update { it.copy(sharedAnimation = false) }
+            }
+            is Move -> {
+                _imageStates.apply { swap(event.fromIndex, event.toIndex) }
+                _state.update { it.copy(imageStatesHashcode = _imageStates.hashCode()) }
+            }
+            is Test -> {
+                // TODO do smthng
             }
         }
     }

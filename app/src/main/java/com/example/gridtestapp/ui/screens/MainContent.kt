@@ -9,6 +9,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.ExperimentalAnimationSpecApi
 import androidx.compose.animation.core.keyframes
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,8 +40,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -54,7 +57,9 @@ import com.example.gridtestapp.logic.events.ChangeVisibleRange
 import com.example.gridtestapp.logic.events.ImagePressed
 import com.example.gridtestapp.logic.events.ImagePressedNavigate
 import com.example.gridtestapp.logic.events.LoadImageAgain
+import com.example.gridtestapp.logic.events.Move
 import com.example.gridtestapp.logic.events.UpdateImageWidthEvent
+import com.example.gridtestapp.logic.states.ImageState
 import com.example.gridtestapp.logic.states.LoadState
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.logic.viewmodels.ImageWidth
@@ -66,6 +71,7 @@ import com.example.gridtestapp.ui.composables.Loader
 import com.example.gridtestapp.ui.other.MultiBrushPainter
 import com.example.gridtestapp.ui.other.animationDuration
 import com.example.gridtestapp.ui.other.easing
+import com.example.gridtestapp.ui.other.id
 import com.example.gridtestapp.ui.other.mapState
 import com.example.gridtestapp.ui.other.shake
 import com.example.gridtestapp.ui.theme.DarkColorScheme
@@ -75,12 +81,15 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import org.koin.androidx.compose.get
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyGridState
 
 /*
 *
 *   Главный экран
 *
 */
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun MainContent(
     paddingValues: PaddingValues,
@@ -130,7 +139,7 @@ fun ToggleButtons() {
 
     val context = LocalContext.current
     val buttonTexts = remember {
-        val buttonCount = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) { 3 } else { 2 }
+        val buttonCount = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) 3 else 2
         arrayOf(
             getString(context, R.string.by_default),
             getString(context, R.string.light),
@@ -162,7 +171,7 @@ fun ToggleButtons() {
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun ImageGrid(
     animatedScope: AnimatedContentScope,
@@ -198,6 +207,10 @@ fun ImageGrid(
         val selectedImage = appViewModel.state.mapState(coroutineScope) { it.selectedImage }.collectAsState()
         val currentImage = appViewModel.state.mapState(coroutineScope) { it.currentImage }.collectAsState()
 
+        val reorderableLazyGridState = rememberReorderableLazyGridState(gridState) { from, to ->
+            appViewModel.setEvent(Move(from.index, to.index))
+        }
+
         LazyVerticalGrid(
             state = gridState,
             modifier = Modifier.fillMaxSize(),
@@ -208,82 +221,93 @@ fun ImageGrid(
 
             itemsIndexed(
                 imageStates,
-                key = { index, imageState -> "$index. ${imageState.value.url}" },
+                key = { _, imageState -> imageState.value.id() },
             ) { index, imageStateItem ->
 
                 val imageState by imageStateItem.collectAsState()
 
                 val url = imageState.url
-                val previewState = imageState.previewState
 
-                val imageBitmap = imageState.previewBitmap
-                val imageColors = imageState.imageColors
+                ReorderableItem(reorderableLazyGridState, key = imageState.id()) { isDragging ->
 
-                val painter = if (imageBitmap == null) {
-                    if (imageColors == null) {
-                        ColorPainter(Color.Transparent)
-                    } else {
-                        multiBrushPainter(pxWidth, imageColors)
-                    }
-                } else {
-                    BitmapPainter(imageBitmap)
-                }
+                    val interactionSource = remember { MutableInteractionSource() }
 
-                with(sharedTransitionScope) {
+                    with(sharedTransitionScope) {
 
-                    val sharedContentState = rememberSharedContentState(key = index)
+                        val sharedContentState = rememberSharedContentState(key = index)
 
-                    Image(
-                        painter = painter,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .zIndex(
-                                if (currentImage.value?.index == index) { 1F } else { 0F }
-                            )
-                            .then(
-                                if (selectedImage.value?.index == index) {
-                                    if (selectedImage.value?.consumed == false) {
-                                        appViewModel.setEvent(ImagePressedNavigate(url, index))
+                        val previewState = imageState.previewState
+                        Image(
+                            painter = imagePainter(imageState, pxWidth),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .zIndex(if (currentImage.value?.index == index) 1F else 0F)
+                                .then(
+                                    if (selectedImage.value?.index == index) {
+                                        if (selectedImage.value?.consumed == false) {
+                                            appViewModel.setEvent(ImagePressedNavigate(url, index))
+                                        }
+                                        Modifier.sharedBounds(
+                                            sharedContentState,
+                                            animatedVisibilityScope = animatedScope,
+                                            renderInOverlayDuringTransition = false,
+                                            boundsTransform = { initialBounds, targetBounds ->
+                                                keyframes {
+                                                    durationMillis = animationDuration
+                                                    initialBounds at 0 using easing
+                                                    targetBounds at animationDuration
+                                                }
+                                            },
+                                        )
+                                    } else {
+                                        Modifier
                                     }
-                                    Modifier.sharedBounds(
-                                        sharedContentState,
-                                        animatedVisibilityScope = animatedScope,
-                                        renderInOverlayDuringTransition = false,
-                                        boundsTransform = { initialBounds, targetBounds ->
-                                            keyframes {
-                                                durationMillis = animationDuration
-                                                initialBounds at 0 using easing
-                                                targetBounds at animationDuration
+                                )
+                                .then(
+                                    if (dpWidth == 0.dp) {
+                                        Modifier
+                                            .fillMaxSize()
+                                            .aspectRatio(1f)
+                                    } else {
+                                        Modifier
+                                            .width(dpWidth)
+                                            .height(dpWidth)
+                                    }
+                                )
+                                .clickable(
+                                    interactionSource,
+                                    indication = null,
+                                ) { appViewModel.setEvent(ImagePressed(url, index)) }
+                                .longPressDraggableHandle(
+                                    enabled = previewState == LoadState.LOADED || previewState == LoadState.FAIL,
+                                    interactionSource = interactionSource
+                                )
+                                .then(
+                                    if (isDragging) {
+                                        Modifier
+                                            .graphicsLayer {
+                                                this.scaleX = 1.2f
+                                                this.scaleY = 1.2f
                                             }
-                                        },
-                                    )
-                                } else {
-                                    Modifier
-                                }
-                            )
-                            .then(
-                                if (dpWidth == 0.dp) {
-                                    Modifier
-                                        .fillMaxSize()
-                                        .aspectRatio(1f)
-                                } else {
-                                    Modifier
-                                        .width(dpWidth)
-                                        .height(dpWidth)
-                                }
-                            )
-                            .clickable(
-                                remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = { appViewModel.setEvent(ImagePressed(url, index)) },
-                            )
-                    )
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                        )
 
-                    if (previewState == LoadState.LOADING) {
-                        ImageLoader(dpWidth)
-                    } else if (previewState == LoadState.FAIL) {
-                        FailBox(url, dpWidth)
+                        if (previewState == LoadState.LOADING) {
+                            ImageLoader(dpWidth)
+                        } else if (previewState == LoadState.FAIL) {
+                            Box(
+                                Modifier.longPressDraggableHandle(
+                                    enabled = true,
+                                    interactionSource = interactionSource,
+                                )
+                            ) {
+                                FailBox(url, dpWidth)
+                            }
+                        }
                     }
                 }
             }
@@ -305,7 +329,21 @@ fun ImageGrid(
     }
 }
 
-@Composable
+fun imagePainter(imageState: ImageState, pxWidth: Int): Painter {
+    val previewBitmap = imageState.previewBitmap
+    return if (previewBitmap == null) {
+        val imageColors = imageState.imageColors
+        if (imageColors == null) {
+            ColorPainter(Color.Transparent)
+        } else {
+            multiBrushPainter(pxWidth, imageColors)
+        }
+    } else {
+        BitmapPainter(previewBitmap)
+    }
+}
+
+
 private fun multiBrushPainter(
     pxWidth: Int,
     imageColors: ImageColors

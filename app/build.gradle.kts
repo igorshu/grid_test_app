@@ -87,6 +87,8 @@ dependencies {
     implementation("com.robertlevonyan.compose:buttontogglegroup:1.2.0")
     implementation("com.google.code.gson:gson:2.11.0")
 
+    implementation("sh.calvin.reorderable:reorderable:2.2.0")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
