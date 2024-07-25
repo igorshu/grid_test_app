@@ -51,9 +51,8 @@ android {
     }
 }
 
-val lifecycleVersion = "2.8.0"
-val okHttpVersion = "4.9.3"
-val koinVersion = "3.4.0"
+val okHttpVersion = "4.12.0"
+val koinVersion = "3.5.6"
 
 dependencies {
 
@@ -61,25 +60,26 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
     implementation("androidx.lifecycle:lifecycle-runtime-compose-android:2.8.3")
     implementation("androidx.activity:activity-compose:1.9.0")
-    implementation(platform("androidx.compose:compose-bom:2023.08.00"))
+    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation("androidx.compose.animation:animation:1.7.0-beta04")
+    implementation("androidx.compose.animation:animation:1.7.0-beta05")
+    implementation("androidx.compose.foundation:foundation:1.7.0-beta06")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
     implementation("com.squareup.okhttp3:okhttp:$okHttpVersion")
     implementation("com.squareup.okhttp3:logging-interceptor:$okHttpVersion")
 
     implementation("io.insert-koin:koin-androidx-compose:$koinVersion")
 
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.28.0")
-    implementation("androidx.compose.foundation:foundation:1.6.8")
-    implementation("androidx.core:core-splashscreen:1.0.1")
 
     implementation("io.arrow-kt:arrow-core:1.2.4")
     implementation("org.apache.commons:commons-io:1.3.2")
