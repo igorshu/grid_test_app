@@ -53,20 +53,21 @@ android {
 
 val okHttpVersion = "4.12.0"
 val koinVersion = "3.5.6"
+val lifecycleVersion = "2.8.4"
 
 dependencies {
 
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose-android:2.8.3")
-    implementation("androidx.activity:activity-compose:1.9.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose-android:$lifecycleVersion")
+    implementation("androidx.activity:activity-compose:1.9.1")
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.navigation:navigation-compose:2.7.7")
-    implementation("androidx.compose.animation:animation:1.7.0-beta05")
+    implementation("androidx.compose.animation:animation:1.7.0-beta06")
     implementation("androidx.compose.foundation:foundation:1.7.0-beta06")
     implementation("androidx.core:core-splashscreen:1.0.1")
 
