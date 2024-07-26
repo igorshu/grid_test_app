@@ -24,7 +24,7 @@ import org.koin.dsl.module
 *   Вью модель для главного экрана с превьюшками
 *
 */
-class MainViewModel(private val application: Application): AndroidViewModel(application), KoinComponent {
+class MainViewModel(application: Application): AndroidViewModel(application), KoinComponent {
 
     private val _state: MutableStateFlow<MainScreenState> = MutableStateFlow(MainScreenState())
     val state: StateFlow<MainScreenState> = _state.asStateFlow()
