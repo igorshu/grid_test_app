@@ -111,10 +111,15 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad ->
         val index = imageStates.index(url)
         viewModelScope.launch(handler + Dispatchers.Main.immediate) {
-            _imageStates[index].update {
+            imageStateBy(url)?.update {
                 it.copy(imageError = ImageError(errorMessage, canBeLoad), previewState = LoadState.FAIL, previewBitmap = null)
             }
         }
+    }
+
+    private fun imageStateBy(url: String): MutableStateFlow<ImageState>? {
+        val index = _imageStates.index(url)
+        return if (index >= 0) _imageStates[index] else null
     }
 
     private val unknownFail: UnknownFail = { throwable ->
@@ -183,7 +188,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             url,
             onLoading = { _ ->
                 viewModelScope.launch(handler + Dispatchers.Main.immediate) {
-                    _imageStates[index].update {
+                    imageStateBy(url)?.update {
                         it.copy(imageError = null, previewState = LoadState.LOADING, previewBitmap = null)
                     }
                 }
@@ -200,7 +205,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             val imageColors = CacheManager.imageColors(bitmap.asAndroidBitmap())
 
             viewModelScope.launch(handler + Dispatchers.Main) {
-                _imageStates[index].update {
+                imageStateBy(url)?.update {
                     it.copy(imageError = null, previewState = LoadState.LOADED, previewBitmap = bitmap, imageColors = imageColors)
                 }
             }
@@ -244,7 +249,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
                                 // loading state
                                 viewModelScope.launch(handler + Dispatchers.Main) {
-                                    _imageStates[index].update {
+                                    imageStateBy(url)?.update {
                                         it.copy(imageError = null, previewState = LoadState.LOADING, previewBitmap = null)
                                     }
                                 }
@@ -262,7 +267,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 } else { // outer
                     if (previewState != LoadState.FAIL && previewState != LoadState.LOADING) {
                         viewModelScope.launch(handler + Dispatchers.Main.immediate) {
-                            _imageStates[index].update {
+                            imageStateBy(imageState.value.url)?.update {
                                 it.copy(imageError = null, previewState = LoadState.IDLE, previewBitmap = null)
                             }
                         }
@@ -290,9 +295,9 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             return
         }
 
-        imageStates.forEachIndexed { index, imageState ->
+        imageStates.forEachIndexed { _, imageState ->
             if (imageState.value.previewState == LoadState.LOADING || imageState.value.previewState == LoadState.FAIL) {
-                _imageStates[index].update {
+                imageStateBy(imageState.value.url)?.update {
                     it.copy(imageError = null, previewState = LoadState.IDLE, previewBitmap = null)
                 }
             }
