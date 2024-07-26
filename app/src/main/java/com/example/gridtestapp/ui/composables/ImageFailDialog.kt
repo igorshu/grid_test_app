@@ -27,14 +27,14 @@ import com.example.gridtestapp.R
 import com.example.gridtestapp.logic.events.DismissImageFailDialog
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.ui.other.index
-import org.koin.androidx.compose.get
+import org.koin.compose.koinInject
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun ImageFailDialog(
     onLoadAgain: (url: String, index: Int) -> Unit,
 ) {
-    val appViewModel: AppViewModel = get()
+    val appViewModel: AppViewModel = koinInject()
     val appState by appViewModel.state.collectAsState()
 
     appState.showImageFailDialog.onSome {url ->

@@ -19,14 +19,14 @@ import androidx.compose.ui.zIndex
 import com.example.gridtestapp.R
 import com.example.gridtestapp.logic.events.ShowImageFailDialog
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
-import org.koin.androidx.compose.get
+import org.koin.compose.koinInject
 
 @Composable
 fun FailBox(
     url: String,
     dpWidth: Dp,
 ) {
-    val appViewModel: AppViewModel = get()
+    val appViewModel: AppViewModel = koinInject()
 
     Box(
         modifier = if (dpWidth == 0.dp) {

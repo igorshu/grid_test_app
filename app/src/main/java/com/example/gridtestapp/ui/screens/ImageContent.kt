@@ -48,8 +48,8 @@ import com.example.gridtestapp.ui.other.animationDuration
 import com.example.gridtestapp.ui.other.easing
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
-import org.koin.androidx.compose.get
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 /*
@@ -68,7 +68,7 @@ fun ImageContent(
     paddingValues: PaddingValues,
 ) {
 
-    val appViewModel: AppViewModel = get()
+    val appViewModel: AppViewModel = koinInject()
     val imageViewModel: ImageViewModel = koinViewModel(parameters = { parametersOf(urls, index, url) })
 
     val imageState = imageViewModel.state.collectAsState().value
@@ -186,7 +186,7 @@ fun ImageContent(
                         }
                     } else {
                         if (previewUrlState == FAIL || urlState == FAIL) {
-                            FailBox(url, get<ImageWidth>().dpWidth)
+                            FailBox(url, koinInject<ImageWidth>().dpWidth)
                         } else {
                             Box(
                                 modifier = Modifier.aspectRatio(1.0f),

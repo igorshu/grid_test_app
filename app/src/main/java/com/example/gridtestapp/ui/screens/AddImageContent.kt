@@ -41,15 +41,15 @@ import com.example.gridtestapp.ui.composables.FailBox
 import com.example.gridtestapp.ui.composables.ImageFailDialog
 import net.engawapg.lib.zoomable.rememberZoomState
 import net.engawapg.lib.zoomable.zoomable
-import org.koin.androidx.compose.get
+import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 @Composable
 fun AddImageContent(
     paddingValues: PaddingValues,
     url: String,
-    addImageViewModel: AddImageViewModel = get(parameters = { parametersOf(url) }),
-    appViewModel: AppViewModel = get(),
+    addImageViewModel: AddImageViewModel = koinInject(parameters = { parametersOf(url) }),
+    appViewModel: AppViewModel = koinInject(),
 ) {
 
     val state = addImageViewModel.state.collectAsState().value
@@ -114,7 +114,7 @@ fun AddImageContent(
         ) {
             val urlState = state.loadState
             if (urlState == FAIL) {
-                FailBox(url, get<ImageWidth>().dpWidth)
+                FailBox(url, koinInject<ImageWidth>().dpWidth)
             } else {
                 Box(
                     modifier = Modifier.aspectRatio(1.0f),

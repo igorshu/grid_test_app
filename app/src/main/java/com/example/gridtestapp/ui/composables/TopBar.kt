@@ -23,12 +23,12 @@ import com.example.gridtestapp.logic.events.SharePressed
 import com.example.gridtestapp.logic.states.Screen
 import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.ui.navigation.Routes
-import org.koin.androidx.compose.get
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar() {
-    val appViewModel: AppViewModel = get()
+    val appViewModel: AppViewModel = koinInject()
     val appState by appViewModel.state.collectAsState()
 
     if (appState.showTopBar) {
@@ -42,7 +42,7 @@ fun TopBar() {
             title = { Text(appState.title, maxLines = 1) },
             navigationIcon = {
                 if (appState.showBack) {
-                    val routes = get<Routes>()
+                    val routes = koinInject<Routes>()
                     IconButton(onClick = { routes.goBack() }) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBack,

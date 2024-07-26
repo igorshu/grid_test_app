@@ -36,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -80,7 +81,7 @@ import com.robertlevonyan.compose.buttontogglegroup.RowToggleButtonGroup
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
-import org.koin.androidx.compose.get
+import org.koin.compose.koinInject
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyGridState
 
@@ -96,7 +97,7 @@ fun MainContent(
     animatedScope: AnimatedContentScope,
     sharedTransitionScope: SharedTransitionScope,
 ) {
-    val appViewModel: AppViewModel = get()
+    val appViewModel: AppViewModel = koinInject()
 
     val coroutineScope = rememberCoroutineScope()
     val loading by appViewModel.state.mapState(coroutineScope) { it.loading }.collectAsState()
@@ -114,7 +115,7 @@ fun MainContent(
                 .padding()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            val mainViewModel: MainViewModel = get()
+            val mainViewModel: MainViewModel = koinInject()
             val mainState by mainViewModel.state.collectAsState()
 
             if (loading) {
@@ -128,7 +129,7 @@ fun MainContent(
 
 @Composable
 fun ToggleButtons() {
-    val appViewModel: AppViewModel = get()
+    val appViewModel: AppViewModel = koinInject()
     val appState by appViewModel.state.collectAsState()
 
     val primarySelection = remember {
@@ -178,8 +179,8 @@ fun ImageGrid(
     sharedTransitionScope: SharedTransitionScope,
     widthConsumed: Boolean,
 ) {
-    val appViewModel: AppViewModel = get()
-    val mainViewModel: MainViewModel = get()
+    val appViewModel: AppViewModel = koinInject()
+    val mainViewModel: MainViewModel = koinInject()
 
     Log.d("cons", "widthConsumed = $widthConsumed")
 
@@ -188,8 +189,8 @@ fun ImageGrid(
     ) {
         val gridState = rememberLazyGridState()
 
-        val dpWidth = get<ImageWidth>().dpWidth
-        val pxWidth = get<ImageWidth>().pxWidth
+        val dpWidth = koinInject<ImageWidth>().dpWidth
+        val pxWidth = koinInject<ImageWidth>().pxWidth
 
         val density = LocalDensity.current
         LaunchedEffect(gridState) {
