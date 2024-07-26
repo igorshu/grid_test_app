@@ -71,7 +71,7 @@ class AddImageViewModel(application: Application, val url: String): AndroidViewM
 
     init {
         viewModelScope.launch {
-            connectionManager.listen { restoreAfterDisconnect() }
+            connectionManager.listenRestore { restoreAfterDisconnect() }
         }
     }
 

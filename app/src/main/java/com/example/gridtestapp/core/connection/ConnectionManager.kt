@@ -11,6 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.runningFold
 import kotlinx.coroutines.flow.update
 import org.koin.core.component.KoinComponent
@@ -25,7 +26,9 @@ class ConnectionManager(private val application: Application): KoinComponent {
 
     private val _state: MutableStateFlow<Boolean> = MutableStateFlow(true)
     val state: Flow<ConnectionState>
-        get() = _state.runningFold(initial = ConnectionState(true, true)) { a, b -> ConnectionState(a.current, b) }
+        get() = _state
+            .onEach { online = it }
+            .runningFold(initial = ConnectionState(true, true)) { a, b -> ConnectionState(a.current, b) }
 
     suspend fun init() {
         initConnectivity(application)
@@ -83,7 +86,7 @@ class ConnectionManager(private val application: Application): KoinComponent {
         connectivityManager.requestNetwork(networkRequest, networkCallback)
     }
 
-    suspend fun listen(onRestore: () -> Unit) {
+    suspend fun listenRestore(onRestore: () -> Unit) {
         return state
             .filter { connectionState ->
                 !connectionState.previous && connectionState.current

@@ -134,7 +134,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         subscribeToEvents()
 
         viewModelScope.launch {
-            connectionManager.listen { restoreAfterDisconnect() }
+            connectionManager.listenRestore { restoreAfterDisconnect() }
         }
 
         viewModelScope.launch(handler + Dispatchers.IO) {
