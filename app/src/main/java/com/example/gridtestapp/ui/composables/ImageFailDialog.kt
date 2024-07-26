@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +45,7 @@ fun ImageFailDialog(
         val imageError = imageState.imageError
 
         imageError?.let {
-            AlertDialog(onDismissRequest = { appViewModel.setEvent(DismissImageFailDialog) }) {
+            BasicAlertDialog(onDismissRequest = { appViewModel.setEvent(DismissImageFailDialog) }) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
