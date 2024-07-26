@@ -1,6 +1,8 @@
 package com.example.gridtestapp.core.cache
 
+import android.graphics.Bitmap
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 
 /*
 *
@@ -40,5 +42,18 @@ object MemoryManager {
 
     fun clearAll() {
         original.clear()
+    }
+
+    /* --- Notification --- */
+
+    fun notificationBitmap(url: String, width: Int): Bitmap? {
+        return original[url]?.let {
+            if (width > it.width) {
+                return it.asAndroidBitmap()
+            } else {
+                val height = width * it.height / it.width
+                return Bitmap.createScaledBitmap(it.asAndroidBitmap(), width, height, false)
+            }
+        }
     }
 }

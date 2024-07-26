@@ -1,8 +1,8 @@
 package com.example.gridtestapp.logic.viewmodels
 
 import android.app.Application
+import android.content.res.Resources
 import android.widget.Toast
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gridtestapp.core.NotificationsManager
@@ -71,8 +71,8 @@ class ImageViewModel(
             }
             is ShowImageNotification -> {
                 viewModelScope.launch(handler + Dispatchers.Default) {
-                    val imageBitmap = MemoryManager.getOriginalBitmap(event.url)
-                        ?.asAndroidBitmap()
+                    val imageBitmap = MemoryManager
+                        .notificationBitmap(event.url, Resources.getSystem().displayMetrics.widthPixels)
                         ?.apply { prepareToDraw() }
                     notificationsManager.showImageNotification(imageBitmap, event.url)
                 }
