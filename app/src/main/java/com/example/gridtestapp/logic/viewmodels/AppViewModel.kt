@@ -388,7 +388,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                 _state.update { it.copy(sharedAnimation = false) }
             }
             is Move -> {
-                _imageStates.apply { swap(event.fromIndex, event.toIndex) }
+                val imStates = _imageStates.toMutableList().apply { swap(event.fromIndex, event.toIndex) }
+                _imageStates = imStates
                 _state.update { it.copy(imageStatesHashcode = _imageStates.hashCode()) }
             }
             is Test -> {
@@ -432,7 +433,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                     val imageColors = CacheManager.imageColors(bitmap.asAndroidBitmap())
 
                     viewModelScope.launch(handler + Dispatchers.Main.immediate) {
-                        _imageStates.apply {
+                        val imStates = _imageStates.toMutableList().apply {
                             index(url).let {
                                 if (it != -1) {
                                     removeAt(it)
@@ -440,6 +441,8 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                             }
                             add(0, MutableStateFlow(ImageState(url, null, LoadState.LOADED, bitmap, imageColors)))
                         }
+                        _imageStates = imStates
+                        _state.update { it.copy(imageStatesHashcode = _imageStates.hashCode()) }
                     }
                 }
             }
@@ -458,10 +461,10 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         viewModelScope.launch(handler + Dispatchers.IO) {
 
             viewModelScope.launch(handler + Dispatchers.Main) {
-                _imageStates.apply { removeAt(index) }
-                _state.update { it.copy(sharedAnimation = false) }
+                val imStates = _imageStates.toMutableList().apply { removeAt(index) }
+                _imageStates = imStates
+                _state.update { it.copy(sharedAnimation = false, imageStatesHashcode = _imageStates.hashCode()) }
             }
-
 
             MemoryManager.removeBothImages(url)
             CacheManager.removeBothImages(url)
