@@ -133,13 +133,16 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         subscribeToEvents()
 
         viewModelScope.launch {
+            CacheManager.init(application)
             connectionManager.listenRestore { restoreAfterDisconnect() }
         }
 
         viewModelScope.launch(handler + Dispatchers.IO) {
-            CacheManager.init(application)
-            loadLinks()
             connectionManager.init()
+        }
+
+        viewModelScope.launch(handler + Dispatchers.IO) {
+            loadLinks()
         }
 
         _state.update { it.copy(theme = Theme.entries[localRepo.theme]) }
