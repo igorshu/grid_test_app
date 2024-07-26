@@ -46,6 +46,6 @@ class MultiBrushPainter(
     }
 
     override fun toString(): String {
-        return "MultiBrushPainter (brushes = ${brushes.map { it.toString() }.joinToString(", ")})"
+        return "MultiBrushPainter (brushes = ${brushes.joinToString(", ") { it.toString() }})"
     }
 }

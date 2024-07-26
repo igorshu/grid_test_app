@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.engawapg.lib.zoomable
+package com.example.gridtestapp.ui.zoomable
 
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.spring

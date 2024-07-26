@@ -52,7 +52,7 @@ class ImageViewModel(
     private val _state: MutableStateFlow<ImageScreenState> = MutableStateFlow(ImageScreenState(initialIndex = index))
     val state: StateFlow<ImageScreenState> = _state.asStateFlow()
 
-    private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad -> }
+    private val imageLoadFail: ImageLoadFail = { _, _, _ -> }
     private val unknownFail: UnknownFail = { throwable ->
         viewModelScope.launch (handler) {
             Toast.makeText(application, throwable.message.toString(), Toast.LENGTH_LONG).show()
@@ -87,7 +87,7 @@ class ImageViewModel(
                 if (bitmap != null) {
                     _state.update {
                         val originalUrlStates = it.originalUrlStates.toMutableMap()
-                        urls.filterIndexed() { i, url ->
+                        urls.filterIndexed { i, _ ->
                             i < index - Settings.ORIGINAL_PRELOAD_OFFSET || i > index + Settings.ORIGINAL_PRELOAD_OFFSET
                         }
                         .forEach { url ->

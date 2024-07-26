@@ -39,8 +39,8 @@ import com.example.gridtestapp.logic.viewmodels.AppViewModel
 import com.example.gridtestapp.logic.viewmodels.ImageWidth
 import com.example.gridtestapp.ui.composables.FailBox
 import com.example.gridtestapp.ui.composables.ImageFailDialog
-import net.engawapg.lib.zoomable.rememberZoomState
-import net.engawapg.lib.zoomable.zoomable
+import com.example.gridtestapp.ui.zoomable.rememberZoomState
+import com.example.gridtestapp.ui.zoomable.zoomable
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 

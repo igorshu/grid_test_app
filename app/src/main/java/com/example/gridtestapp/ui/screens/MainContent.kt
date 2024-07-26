@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalAnimationSpecApi::class)
+@file:OptIn(ExperimentalSharedTransitionApi::class)
 
 package com.example.gridtestapp.ui.screens
 
@@ -7,7 +7,6 @@ import android.util.Log
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.ExperimentalAnimationSpecApi
 import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image

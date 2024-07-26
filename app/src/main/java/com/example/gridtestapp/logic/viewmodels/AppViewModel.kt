@@ -109,7 +109,6 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
 
     private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad ->
-        val index = imageStates.index(url)
         viewModelScope.launch(handler + Dispatchers.Main.immediate) {
             imageStateBy(url)?.update {
                 it.copy(imageError = ImageError(errorMessage, canBeLoad), previewState = LoadState.FAIL, previewBitmap = null)
@@ -183,7 +182,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         }
     }
 
-    private suspend fun loadImage(url: String, index: Int) {
+    private suspend fun loadImage(url: String) {
         imageLoader.loadImage(
             url,
             onLoading = { _ ->
@@ -193,11 +192,11 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                     }
                 }
             },
-            onLoaded = { setLoadedState(it, index) }
+            onLoaded = { setLoadedState(it) }
         )
     }
 
-    private fun setLoadedState(url: String, index: Int) {
+    private fun setLoadedState(url: String) {
         val bitmap: ImageBitmap? = CacheManager.previewImageBitmap(url)
         if (bitmap != null) {
             bitmap.prepareToDraw()
@@ -214,7 +213,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
     private fun loadImageAgain(event: LoadImageAgain) {
         viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
-            loadImage(event.url, event.index)
+            loadImage(event.url)
         }
     }
 
@@ -256,11 +255,11 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
                                 viewModelScope.launch(usualImageContext) {
                                     if (CacheManager.loadImage(url)) {
-                                        setLoadedState(url, index)
+                                        setLoadedState(url)
                                     }
                                 }
                             } else {
-                                setLoadedState(url, index)
+                                setLoadedState(url)
                             }
                         }
                     }
@@ -305,9 +304,9 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
         imageStates
             .subList(preloadRange.first, preloadRange.last)
-            .forEachIndexed { index, imageState ->
+            .forEachIndexed { _, imageState ->
                 viewModelScope.launch(_imageExceptionHandler + imageCacheDispatcher) {
-                    loadImage(imageState.value.url, index + preloadRange.first)
+                    loadImage(imageState.value.url)
                 }
             }
     }

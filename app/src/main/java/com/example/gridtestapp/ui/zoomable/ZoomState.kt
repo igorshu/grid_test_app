@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package net.engawapg.lib.zoomable
+package com.example.gridtestapp.ui.zoomable
 
 import androidx.annotation.FloatRange
 import androidx.compose.animation.core.Animatable

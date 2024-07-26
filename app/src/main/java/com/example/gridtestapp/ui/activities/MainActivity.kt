@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity(), KoinComponent {
         setContent {
             val appViewModel = get<AppViewModel>()
 
-            SharedTransitionLayout() {
+            SharedTransitionLayout {
                 val navController = rememberNavController()
 
                 LaunchedEffect(key1 = navController) {

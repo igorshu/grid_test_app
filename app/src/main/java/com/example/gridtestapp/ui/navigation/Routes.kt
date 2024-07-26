@@ -13,7 +13,7 @@ import java.net.URLEncoder
  *  Класс для навигации по приложению
  *
  */
-class Routes() {
+class Routes {
 
     private lateinit var navController: NavHostController
 
@@ -23,15 +23,15 @@ class Routes() {
 
     fun replaceToMain(route: String) {
         navController.navigate(route) {
-            popUpTo(Routes.MAIN) {
+            popUpTo(MAIN) {
                 inclusive = false
             }
         }
     }
 
     fun replaceToMain() {
-        navController.navigate(Routes.MAIN) {
-            popUpTo(Routes.MAIN) {
+        navController.navigate(MAIN) {
+            popUpTo(MAIN) {
                 inclusive = true
             }
         }
@@ -47,8 +47,8 @@ class Routes() {
 
     fun isImage() = IMAGE == navController.currentDestination?.route
 
-    fun addListener(appViewModel: AppViewModel, navController: NavHostController):Boolean {
-        navController.addOnDestinationChangedListener { controller, destination, arguments ->
+    fun addListener(appViewModel: AppViewModel, navController: NavHostController) {
+        navController.addOnDestinationChangedListener { _, destination, arguments ->
             when (destination.route) {
                 MAIN -> {
                     appViewModel.setEvent(MainScreenEvent)
@@ -72,7 +72,6 @@ class Routes() {
                 }
             }
         }
-        return true
     }
 
     companion object {

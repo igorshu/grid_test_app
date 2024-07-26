@@ -1,13 +1,9 @@
-@file:OptIn(ExperimentalAnimationSpecApi::class)
-
 package com.example.gridtestapp.ui.screens
 
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.ExperimentalAnimationSpecApi
 import androidx.compose.animation.core.keyframes
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -46,8 +42,8 @@ import com.example.gridtestapp.ui.composables.FailBox
 import com.example.gridtestapp.ui.composables.ImageFailDialog
 import com.example.gridtestapp.ui.other.animationDuration
 import com.example.gridtestapp.ui.other.easing
-import net.engawapg.lib.zoomable.rememberZoomState
-import net.engawapg.lib.zoomable.zoomable
+import com.example.gridtestapp.ui.zoomable.rememberZoomState
+import com.example.gridtestapp.ui.zoomable.zoomable
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
@@ -57,11 +53,11 @@ import org.koin.core.parameter.parametersOf
 *   Экран с картинкой
 *
 */
-@OptIn(ExperimentalFoundationApi::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ImageContent(
-    index: Int,
-    url: String,
+    initialIndex: Int,
+    initialUrl: String,
     urls: List<String>,
     animatedScope: AnimatedContentScope,
     sharedTransitionScope: SharedTransitionScope,
@@ -69,7 +65,7 @@ fun ImageContent(
 ) {
 
     val appViewModel: AppViewModel = koinInject()
-    val imageViewModel: ImageViewModel = koinViewModel(parameters = { parametersOf(urls, index, url) })
+    val imageViewModel: ImageViewModel = koinViewModel(parameters = { parametersOf(urls, initialIndex, initialUrl) })
 
     val imageState = imageViewModel.state.collectAsState().value
     val appState = appViewModel.state.collectAsState().value
