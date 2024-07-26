@@ -109,7 +109,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
 
     private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad ->
-        viewModelScope.launch(handler + Dispatchers.Main.immediate) {
+        viewModelScope.launch(handler) {
             imageStateBy(url)?.update {
                 it.copy(imageError = ImageError(errorMessage, canBeLoad), previewState = LoadState.FAIL, previewBitmap = null)
             }
@@ -176,7 +176,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
         val imStates = urls.map { url -> MutableStateFlow(ImageState( url, null, LoadState.IDLE, null, null)) }.toMutableList()
 
-        viewModelScope.launch(handler + Dispatchers.Main) {
+        viewModelScope.launch(handler) {
             _imageStates = imStates
             _state.update { it.copy(loading = false, imageStatesHashcode = _imageStates.hashCode())}
         }
@@ -186,7 +186,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
         imageLoader.loadImage(
             url,
             onLoading = { _ ->
-                viewModelScope.launch(handler + Dispatchers.Main.immediate) {
+                viewModelScope.launch(handler) {
                     imageStateBy(url)?.update {
                         it.copy(imageError = null, previewState = LoadState.LOADING, previewBitmap = null)
                     }
@@ -203,7 +203,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
             val imageColors = CacheManager.imageColors(bitmap.asAndroidBitmap())
 
-            viewModelScope.launch(handler + Dispatchers.Main) {
+            viewModelScope.launch(handler) {
                 imageStateBy(url)?.update {
                     it.copy(imageError = null, previewState = LoadState.LOADED, previewBitmap = bitmap, imageColors = imageColors)
                 }
@@ -247,7 +247,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                             if (CacheManager.isNotCached(url)) {
 
                                 // loading state
-                                viewModelScope.launch(handler + Dispatchers.Main) {
+                                viewModelScope.launch(handler) {
                                     imageStateBy(url)?.update {
                                         it.copy(imageError = null, previewState = LoadState.LOADING, previewBitmap = null)
                                     }
@@ -265,7 +265,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
                     }
                 } else { // outer
                     if (previewState != LoadState.FAIL && previewState != LoadState.LOADING) {
-                        viewModelScope.launch(handler + Dispatchers.Main.immediate) {
+                        viewModelScope.launch(handler) {
                             imageStateBy(imageState.value.url)?.update {
                                 it.copy(imageError = null, previewState = LoadState.IDLE, previewBitmap = null)
                             }
@@ -417,7 +417,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     }
 
     private fun navigateToAddImage(url: String) {
-        viewModelScope.launch(handler + Dispatchers.Main) {
+        viewModelScope.launch(handler) {
             get<Routes>().replaceToMain(Routes.addImageRoute(url))
         }
     }
@@ -431,7 +431,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
                     val imageColors = CacheManager.imageColors(bitmap.asAndroidBitmap())
 
-                    viewModelScope.launch(handler + Dispatchers.Main.immediate) {
+                    viewModelScope.launch(handler) {
                         val imStates = _imageStates.toMutableList().apply {
                             index(url).let {
                                 if (it != -1) {
@@ -449,7 +449,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
             localRepo.urls = imageStates.urls()
 
             if (state.value.currentScreen == Screen.ADD_IMAGE) {
-                viewModelScope.launch(handler + Dispatchers.Main) {
+                viewModelScope.launch(handler) {
                     get<Routes>().goBack()
                 }
             }
@@ -459,7 +459,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
     private fun removeImage(url: String, index: Int) {
         viewModelScope.launch(handler + Dispatchers.IO) {
 
-            viewModelScope.launch(handler + Dispatchers.Main) {
+            viewModelScope.launch(handler) {
                 val imStates = _imageStates.toMutableList().apply { removeAt(index) }
                 _imageStates = imStates
                 _state.update { it.copy(sharedAnimation = false, imageStatesHashcode = _imageStates.hashCode()) }
@@ -470,7 +470,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
             localRepo.urls = imageStates.urls()
 
-            viewModelScope.launch(handler + Dispatchers.Main) {
+            viewModelScope.launch(handler) {
                 get<Routes>().replaceToMain()
             }
         }
