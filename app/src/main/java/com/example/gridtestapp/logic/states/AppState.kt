@@ -33,23 +33,22 @@ data class AppState internal constructor (
     val selectedImage: ImageSelected?,
     val sharedAnimation: Boolean,
 ) {
-    companion object {
-        fun init(title: String): AppState = AppState(
-            theme = Theme.BY_DEFAULT,
-            loading = true,
-            imageStatesHashcode = null,
-            showImageFailDialog = None,
-            inetAvailable = true,
-            showBack = false,
-            showTopBar = true,
-            showSystemBars = true,
-            title = title,
-            currentScreen = Screen.MAIN,
-            currentImage = null,
-            selectedImage = null,
-            sharedAnimation = true,
-        )
-    }
+
+    constructor(title: String) : this(
+        theme = Theme.BY_DEFAULT,
+        loading = true,
+        imageStatesHashcode = null,
+        showImageFailDialog = None,
+        inetAvailable = true,
+        showBack = false,
+        showTopBar = true,
+        showSystemBars = true,
+        title = title,
+        currentScreen = Screen.MAIN,
+        currentImage = null,
+        selectedImage = null,
+        sharedAnimation = true,
+    )
 
     fun clear() = copy(
         loading = true,

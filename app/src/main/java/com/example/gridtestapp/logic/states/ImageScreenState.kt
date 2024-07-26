@@ -5,11 +5,10 @@ data class ImageScreenState internal constructor (
     val originalUrlStates: Map<String, LoadState>,
     val index: Int,
 ) {
-    companion object {
-        fun init(initialIndex: Int) = ImageScreenState(
-            imageLoaded = false,
-            originalUrlStates = hashMapOf(),
-            index = initialIndex,
-        )
-    }
+
+    constructor(initialIndex: Int): this(
+        imageLoaded = false,
+        originalUrlStates = hashMapOf(),
+        index = initialIndex,
+    )
 }

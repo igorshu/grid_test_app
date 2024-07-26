@@ -66,7 +66,7 @@ class AddImageViewModel(application: Application, val url: String): AndroidViewM
 
     private val _imageExceptionHandler = imageExceptionHandler(imageLoadFail, unknownFail, connectionManager)
 
-    private val _state: MutableStateFlow<AddImageState> = MutableStateFlow(AddImageState.init())
+    private val _state: MutableStateFlow<AddImageState> = MutableStateFlow(AddImageState())
     val state: StateFlow<AddImageState> = _state.asStateFlow()
 
     init {

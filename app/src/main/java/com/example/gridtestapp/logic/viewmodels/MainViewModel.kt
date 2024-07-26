@@ -26,7 +26,7 @@ import org.koin.dsl.module
 */
 class MainViewModel(private val application: Application): AndroidViewModel(application), KoinComponent {
 
-    private val _state: MutableStateFlow<MainScreenState> = MutableStateFlow(MainScreenState.init())
+    private val _state: MutableStateFlow<MainScreenState> = MutableStateFlow(MainScreenState())
     val state: StateFlow<MainScreenState> = _state.asStateFlow()
 
     private val _event: MutableSharedFlow<MainEvent> = MutableSharedFlow()

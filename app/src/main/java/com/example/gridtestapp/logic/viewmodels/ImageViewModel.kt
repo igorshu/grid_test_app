@@ -49,7 +49,7 @@ class ImageViewModel(
 
     private val handler = CoroutineExceptionHandler { _, exception -> showError(application, viewModelScope, exception)}
 
-    private val _state: MutableStateFlow<ImageScreenState> = MutableStateFlow(ImageScreenState.init(initialIndex = index))
+    private val _state: MutableStateFlow<ImageScreenState> = MutableStateFlow(ImageScreenState(initialIndex = index))
     val state: StateFlow<ImageScreenState> = _state.asStateFlow()
 
     private val imageLoadFail: ImageLoadFail = { url, errorMessage, canBeLoad -> }

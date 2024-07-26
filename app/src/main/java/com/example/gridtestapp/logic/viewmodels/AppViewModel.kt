@@ -97,7 +97,7 @@ class AppViewModel(private val application: Application): AndroidViewModel(appli
 
     private val appName = application.getString(application.applicationInfo.labelRes)
 
-    private val _state: MutableStateFlow<AppState> = MutableStateFlow(AppState.init(appName))
+    private val _state: MutableStateFlow<AppState> = MutableStateFlow(AppState(appName))
     val state: StateFlow<AppState> = _state.asStateFlow()
 
     private var _imageStates: MutableList<MutableStateFlow<ImageState>> = mutableListOf()
